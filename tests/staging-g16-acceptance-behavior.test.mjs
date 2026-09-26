@@ -11,7 +11,7 @@ function runScenario(scenario = {}) {
     import childProcess from 'node:child_process';
     import { registerHooks, syncBuiltinESMExports } from 'node:module';
     const scenario = ${JSON.stringify(scenario)};
-    const trace = { events: [], sqlBounded: true, httpBounded: true, anonymousBearer: null, fixtureHex: '' };
+    const trace = { events: [], sqlBounded: true, httpBounded: true, anonymousBearer: null, fixtureHex: '', selected: { a: false, b: false } };
     const secret = 'SYNTHETIC_PASSWORD_DO_NOT_LOG';
     process.on('exit', () => console.log('G16_TEST_TRACE=' + JSON.stringify(trace)));
     const realLog = console.log;
@@ -78,8 +78,45 @@ function runScenario(scenario = {}) {
       const foreign = headers.get('cookie')?.includes('owner=b');
       if (url.hostname === 'app.invalid') {
         if (url.pathname === '/api/csrf') return json({ csrfToken: 'C'.repeat(43) }, 200, { 'set-cookie': 'yzt_csrf=' + 'C'.repeat(43) + '; Path=/' });
-        if (url.pathname === '/api/auth/login') return json({ ok: true }, 200, { 'set-cookie': 'owner=' + (JSON.parse(init.body).email.startsWith('b@') ? 'b' : 'a') + '; Path=/' });
+        if (url.pathname === '/api/auth/login') {
+          const owner = JSON.parse(init.body).email.startsWith('b@') ? 'b' : 'a';
+          trace.events.push('login_' + owner);
+          return json({ ok: true }, 200, { 'set-cookie': 'owner=' + owner + '; Path=/' });
+        }
+        if (url.pathname === '/api/session' && method === 'GET') {
+          const owner = headers.get('cookie')?.includes('owner=b') ? 'b' : 'a';
+          const businessId = owner === 'b'
+            ? 'f1700000-0000-4000-8000-000000000002'
+            : 'f1700000-0000-4000-8000-000000000001';
+          trace.events.push('session_' + owner);
+          return json({
+            user: { id: owner === 'b' ? 'def10000-0000-4000-8000-000000000002' : '00fd0000-0000-4000-8000-000000000001', email: owner + '@example.invalid' },
+            memberships: [{ business_id: businessId, role: 'owner', active: true }],
+            activeBusinessId: null,
+            passwordRecovery: false,
+            csrfToken: 'C'.repeat(43),
+          });
+        }
+        if (url.pathname === '/api/businesses/select' && method === 'POST') {
+          const owner = headers.get('cookie')?.includes('owner=b') ? 'b' : 'a';
+          const expected = owner === 'b'
+            ? 'f1700000-0000-4000-8000-000000000002'
+            : 'f1700000-0000-4000-8000-000000000001';
+          const requested = JSON.parse(init.body).businessId;
+          if (requested !== expected
+              || headers.get('x-yzt-csrf') !== 'C'.repeat(43)
+              || !headers.get('cookie')?.includes('yzt_csrf=' + 'C'.repeat(43))) {
+            return json({ error: { code: 'TENANT_FORBIDDEN' } }, 403);
+          }
+          trace.selected[owner] = true;
+          trace.events.push('select_' + owner);
+          return json({ ok: true }, 200, { 'set-cookie': 'yzt_business=' + expected + '; Path=/' });
+        }
         if (url.pathname.endsWith('/photos') && method === 'POST') {
+          const owner = headers.get('cookie')?.includes('owner=b') ? 'b' : 'a';
+          if (!trace.selected[owner] || !headers.get('cookie')?.includes('yzt_business=')) {
+            return json({ error: { code: 'TENANT_REQUIRED' } }, 403);
+          }
           trace.events.push('upload');
           fixture = Buffer.from(init.body);
           trace.fixtureHex = fixture.toString('hex');
@@ -149,6 +186,11 @@ test('G16 actual acceptance runner succeeds for matching bytes and expected deni
   const result = runScenario();
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /G16 hosted acceptance passed/);
+  assert.ok(result.trace.events.indexOf('session_a') > result.trace.events.indexOf('login_a'));
+  assert.ok(result.trace.events.indexOf('select_a') > result.trace.events.indexOf('session_a'));
+  assert.ok(result.trace.events.indexOf('upload') > result.trace.events.indexOf('select_a'));
+  assert.equal(result.trace.selected.a, true);
+  assert.equal(result.trace.selected.b, true);
 });
 for (const fault of ['workerCorrupt', 'storageCorrupt']) {
   test(`G16 rejects same-length corruption: ${fault}`, () => {

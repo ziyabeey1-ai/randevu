@@ -157,16 +157,38 @@ function readHeaders(businessId) {
 
 async function login(email, password, businessId) {
   const jar = new Map();
-  const csrfToken = await csrf(jar);
+  const loginCsrf = await csrf(jar);
   const result = await appRequest(jar, '/api/auth/login', {
     method: 'POST',
-    headers: browserMutationHeaders(csrfToken, businessId),
+    headers: browserMutationHeaders(loginCsrf, businessId),
     body: JSON.stringify({ email, password }),
   });
   if (!result.response.ok || result.data?.ok !== true) {
     throw new Error(`G16 staging login failed with HTTP ${result.response.status}`);
   }
-  return { jar, csrfToken };
+
+  // Login intentionally clears the selected-business cookie. Follow the same
+  // session -> business-select sequence as the real WorkspaceShell/staging smoke
+  // before any member-scoped mutation.
+  const session = await appRequest(jar, '/api/session', { headers: { Accept: 'application/json' } });
+  const mutationCsrf = String(session.data?.csrfToken ?? '');
+  const memberships = Array.isArray(session.data?.memberships) ? session.data.memberships : [];
+  if (!session.response.ok
+      || !/^[A-Za-z0-9_-]{43,128}$/.test(mutationCsrf)
+      || jar.get('yzt_csrf') !== mutationCsrf
+      || !memberships.some((membership) => membership?.business_id === businessId)) {
+    throw new Error(`G16 staging session/business membership failed with HTTP ${session.response.status}`);
+  }
+
+  const selected = await appRequest(jar, '/api/businesses/select', {
+    method: 'POST',
+    headers: browserMutationHeaders(mutationCsrf, businessId),
+    body: JSON.stringify({ businessId }),
+  });
+  if (!selected.response.ok || selected.data?.ok !== true || jar.get('yzt_business') !== businessId) {
+    throw new Error(`G16 staging business selection failed with HTTP ${selected.response.status}`);
+  }
+  return { jar, csrfToken: mutationCsrf };
 }
 
 async function supabasePasswordToken(email, password) {
