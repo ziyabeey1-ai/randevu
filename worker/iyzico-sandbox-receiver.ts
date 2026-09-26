@@ -91,8 +91,8 @@ export function createIyzicoSandboxReceiver(
   } catch { throw new Error('IYZICO_SANDBOX_RECEIVER_CONFIGURATION_INVALID'); }
   const credentials = Object.freeze({ IYZICO_SANDBOX_API_KEY: env?.IYZICO_SANDBOX_API_KEY,
     IYZICO_SANDBOX_SECRET_KEY: env?.IYZICO_SANDBOX_SECRET_KEY });
-  let client: ReturnType<typeof createIyzicoSandboxClient>;
-  try { client = createIyzicoSandboxClient(credentials, transport, { callbackUrl, timeoutMs }); }
+  // Validate once without I/O; each request receives its own cancellation-bound client.
+  try { createIyzicoSandboxClient(credentials, transport, { callbackUrl, timeoutMs }); }
   catch { throw new Error('IYZICO_SANDBOX_RECEIVER_CONFIGURATION_INVALID'); }
   // Snapshot bound functions; mutating the ports object later cannot replace dependencies.
   const admit = ports.admit.bind(ports), find = ports.findAttempt.bind(ports);
@@ -129,6 +129,11 @@ export function createIyzicoSandboxReceiver(
     request.signal.addEventListener('abort', stop, { once: true });
     if (request.signal.aborted) stop();
     const alive = () => { if (controller.signal.aborted) throw new Error(); };
+    // Couple the provider fetch (including its body) to this request's total budget.
+    // The adapter retains its own deadline. Never share this signal across receivers.
+    const client = createIyzicoSandboxClient(credentials, (url, init) => transport(url, {
+      ...init, signal: AbortSignal.any([controller.signal, ...(init.signal ? [init.signal] : [])]),
+    }), { callbackUrl, timeoutMs });
 
     const work = (async (): Promise<Response> => {
       try {

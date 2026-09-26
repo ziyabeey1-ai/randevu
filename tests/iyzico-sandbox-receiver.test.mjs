@@ -254,3 +254,68 @@ await test('changed ticket revision observed by the commit port remains a confli
   }},transport:async()=>{currentRevision++;return Response.json(retrieved(a));}});
   assert.equal((await f.handler(callback())).status,503);assert.equal(ledgerWrites,0);
 });
+
+// IYZ-B1 regression: receiver cancellation must reach the injected provider Fetch signal.
+await test('IYZ-B1 callback and webhook abort propagate to the in-flight provider request', async t => {
+  for (const kind of ['callback','webhook']) await t.test(kind, async()=>{
+    const entered=deferred(), release=deferred(), ac=new AbortController();let providerSignal, commits=0;
+    const f=fixture({transport:async(_url,init)=>{
+      providerSignal=init.signal;entered.resolve();await release.promise;return Response.json(retrieved(makeAttempt()));
+    },ports:{commitVerifiedPayment:async()=>{commits++;return {kind:'conflict'};}}});
+    const req=kind==='callback'?callback(f.a,{signal:ac.signal}):webhook(f.a,{},{signal:ac.signal});
+    const pending=f.handler(req);await entered.promise;ac.abort();
+    try {
+      const r=await pending;assert.equal(r.status,503);assert.deepEqual(await r.json(),{status:'unconfirmed'});
+      assert.equal(providerSignal.aborted,true,'receiver ended while provider request remained active');
+      assert.equal(commits,0);
+    } finally {release.resolve();await delay(5);}
+    assert.equal(commits,0,'late provider response must not commit after cancellation');
+  });
+});
+await test('IYZ-B1 abort reaches an already opened provider response stream', async()=>{
+  const entered=deferred(), ac=new AbortController();let providerSignal, stream, aborts=0;
+  const f=fixture({transport:async(_url,init)=>{
+    providerSignal=init.signal;
+    return new Response(new ReadableStream({start(c){
+      stream=c;init.signal.addEventListener('abort',()=>{aborts++;try{c.error(new Error('FAKE_FETCH_ABORT'));}catch{}},{once:true});
+    },pull(){entered.resolve();}}));
+  }});
+  const pending=f.handler(callback(f.a,{signal:ac.signal}));await entered.promise;await delay(1);ac.abort();
+  try {
+    assert.equal((await pending).status,503);assert.equal(providerSignal.aborted,true);
+    assert.equal(aborts,1);assert.equal(f.calls.includes('commit'),false);
+  } finally {try{stream.error(new Error('TEST_CLEANUP'));}catch{};await delay(5);}
+});
+await test('IYZ-B1 total deadline cancels provider even when earlier stages consume the budget', async t=>{
+  // Mock only timers: real Web Crypto still signs the request. No wall-clock race assertion.
+  t.mock.timers.enable({apis:['setTimeout']});
+  const admitted=deferred(), entered=deferred(), release=deferred();let providerSignal;
+  const f=fixture({options:{timeoutMs:1000},ports:{admit:()=>admitted.promise},transport:async(_url,init)=>{
+    providerSignal=init.signal;entered.resolve();await release.promise;return Response.json(retrieved(makeAttempt()));
+  }});
+  const pending=f.handler(callback());t.mock.timers.tick(600);admitted.resolve(true);await entered.promise;
+  // Adapter's own deadline is still 600 ms away when receiver's total deadline expires.
+  t.mock.timers.tick(400);
+  try {
+    const r=await pending;assert.equal(r.status,503);assert.equal(providerSignal.aborted,true);
+    assert.equal(f.calls.includes('commit'),false);
+  } finally {release.resolve();await new Promise(r=>setImmediate(r));t.mock.timers.reset();}
+  assert.equal(f.calls.includes('commit'),false);
+});
+await test('IYZ-B1 aborting one request does not cancel another request on the same receiver', async()=>{
+  const entered=deferred(), release=deferred(), aborted=new AbortController();const signals=new Map();let commits=0;
+  const f=fixture({ports:{findAttempt:async(_account,token)=>({...makeAttempt(),token}),
+    commitVerifiedPayment:async(a,p)=>{commits++;return {kind:'applied',attemptId:a.attemptId,paymentId:p.paymentId};}},
+    transport:async(_url,init)=>{
+      const {token}=JSON.parse(init.body);signals.set(token,init.signal);
+      if(signals.size===2)entered.resolve();await release.promise;
+      return Response.json(retrieved({...makeAttempt(),token}));
+    }});
+  const first=f.handler(callback({...f.a,token:'first-token'},{signal:aborted.signal}));
+  const second=f.handler(callback({...f.a,token:'second-token'}));await entered.promise;aborted.abort();
+  try {
+    assert.equal((await first).status,503);assert.equal(signals.get('first-token').aborted,true);
+    assert.equal(signals.get('second-token').aborted,false);
+  } finally {release.resolve();}
+  assert.equal((await second).status,200);assert.equal(commits,1);
+});
