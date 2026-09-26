@@ -30,13 +30,9 @@ create or replace function storage.foldername(name text)
 returns text[]
 language sql
 immutable
-as $
-  select string_to_array(regexp_replace(name, '^/+|/+
-alter table storage.objects enable row level security;
-grant usage on schema storage to anon, authenticated;
-grant select, insert, update, delete on storage.objects to anon, authenticated;
-, '', 'g'), '/');
-$;
+as $$
+  select string_to_array(regexp_replace(name, '^/+|/+$', '', 'g'), '/');
+$$;
 
 -- CI-only mirror of Supabase Storage's operation-aware RLS helper. The hosted
 -- service normalizes an optional "storage." prefix before exact comparison.
@@ -44,7 +40,7 @@ create or replace function storage.allow_any_operation(operations text[])
 returns boolean
 language sql
 stable
-as $
+as $$
   with current_op as (
     select regexp_replace(coalesce(current_setting('storage.operation', true), ''), '^storage\.', '') as value
   )
@@ -55,7 +51,7 @@ as $
     where current_op.value <> ''
       and regexp_replace(requested.operation, '^storage\.', '') = current_op.value
   );
-$;
+$$;
 
 alter table storage.objects enable row level security;
 grant usage on schema storage to anon, authenticated;
