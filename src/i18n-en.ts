@@ -1564,6 +1564,8 @@ const en: Record<string, string> = {
   'Takvim dosyasını indir (.ics)': 'Download calendar file (.ics)',
   'Takvime ekle': 'Add to calendar',
   'Takvime kaydetme ve hatırlatıcı ayarları cihazınızdaki takvim uygulamasında tamamlanır.': 'Saving to your calendar and reminder settings are completed in your device calendar app.',
+  'Tarayıcınız yeni sekmeyi engelledi. Google Takvim bağlantısını açın.': 'Your browser blocked the new tab. Open the Google Calendar link.',
+  'Google Takvim bağlantısını aç': 'Open Google Calendar link',
 };
 
 export default en;

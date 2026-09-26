@@ -65,3 +65,38 @@ test('result actions revalidate by POST body and never put management authority 
   assert.doesNotMatch(page, /\/api\/manage\/view\?[^'"`]*token/);
   assert.match(page, /refreshEvent=\{refreshCalendarEvent\}/);
 });
+
+test('fresh export loader rejects a booking that became terminal instead of exporting stale state', async () => {
+  let refreshes = 0;
+  await assert.rejects(
+    calendar.loadExportableCalendarEvent(base, async () => {
+      refreshes += 1;
+      return { ...base, status: 'cancelled' };
+    }),
+    /CALENDAR_EVENT_NOT_EXPORTABLE/,
+  );
+  assert.equal(refreshes, 1);
+});
+
+test('Google popup is created synchronously without opener and can navigate without replacing current tab', () => {
+  const navigations = [];
+  const popup = {
+    opener: { secret: 'must be removed' },
+    location: { replace: (url) => navigations.push(url) },
+    close() {},
+  };
+  const prepared = calendar.prepareGoogleCalendarPopup(() => popup);
+  assert.equal(prepared, popup);
+  assert.equal(popup.opener, null);
+  prepared.location.replace(calendar.googleCalendarUrl(base));
+  assert.equal(navigations.length, 1);
+  assert.equal(new URL(navigations[0]).origin, 'https://calendar.google.com');
+  assert.equal(calendar.prepareGoogleCalendarPopup(() => null), null);
+});
+
+test('manage calendar actions refresh through the existing POST view loader on every export', async () => {
+  const page = await readFile(new URL('../src/ManageAppointmentPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /<CustomerCalendarActions[\s\S]*?refreshEvent=\{async \(\) => \{[\s\S]*?await loadAppointment\(\)/);
+  assert.match(page, /function loadAppointment\(\)[\s\S]*?'\/api\/manage\/view'[\s\S]*?body: JSON\.stringify\(\{ token \}\)/);
+  assert.match(page, /const fresh = await loadAppointment\(\);[\s\S]*?managedCalendarEvent\(fresh\.appointment, fresh\.group\)/);
+});

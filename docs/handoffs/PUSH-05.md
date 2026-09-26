@@ -9,7 +9,7 @@
 
 ## Read first ve teslim amacı
 
-[AGENTS](../../AGENTS.md), [ajan protokolü](../plan/agent-workflow.md), [PUSH-05 ürün sözleşmesi](../plan/web-push-product-ready.md#7-takvime-ekleme--push-05), [F12-05](../plan/phase-12.md#f12-05) ve mevcut yetkili rezervasyon sonuç/yönetim ekranları okunur. Sonuç ekranı daha sonra değişmiş olabileceği için takvim eyleminde güncel `POST /api/manage/view` tekrar okunur; ham capability yalnız JSON POST body'dedir. Yönetim ekranı kendi yetkili güncel projection'ını kullanır. Tekli/grup bir etkinlik olarak, UTC anı ve IANA saat dilimiyle dışa aktarılır.
+[AGENTS](../../AGENTS.md), [ajan protokolü](../plan/agent-workflow.md), [PUSH-05 ürün sözleşmesi](../plan/web-push-product-ready.md#7-takvime-ekleme--push-05), [F12-05](../plan/phase-12.md#f12-05) ve mevcut yetkili rezervasyon sonuç/yönetim ekranları okunur. Her iki ekranda da her takvim eyleminden önce güncel `POST /api/manage/view` okunur; ham capability yalnız JSON POST body'dedir. Yönetim ekranı bu yanıtla görünür projection'ı da günceller. Google penceresi kullanıcı tıklamasında açılır ve mevcut sekme korunur. Tekli/grup bir etkinlik olarak, UTC anı ve IANA saat dilimiyle dışa aktarılır.
 
 ## Yazım alanı ve sıradaki sınır
 
@@ -26,6 +26,6 @@ Yazılabilir: `src/customer-calendar-export.ts`, `src/CustomerCalendarActions.ts
 
 ## Kanıt ve sonraki eylem
 
-Yerel `node --test tests/customer-calendar-export.test.mjs` 5/5 PASS, `npm run build` (typecheck dahil) PASS, `node scripts/ci-docs.mjs` PASS, diff whitespace PASS. `control-browser` ile `127.0.0.1:5173` ve `localhost:5173` denendi; cloud tarayıcısı her iki yerel adresi `ERR_BLOCKED_BY_CLIENT` ile engelledi. Yerel görsel/gerçek cihaz kabulü yapılmadı. Bu PR için exact candidate CI ve bağımsız inceleme ayrıca gerekir; belge/test/build sonuçları bunların yerine geçmez. Kullanılan beceriler: `vercel:react-best-practices`, `vercel:agent-browser-verify` ve `control-browser`. Browser doğrulama girişimi başarısızlığı gizlenmez.
+Yerel `node --test tests/customer-calendar-export.test.mjs` 8/8 PASS, `npm run typecheck` PASS, `npm run build` PASS, `node scripts/ci-docs.mjs` PASS, diff whitespace PASS. İlk exact-head [R2 incelemesi](https://github.com/ziyabeey/randevu/pull/648#issuecomment-5849992228) açık yönetim ekranından eski takvim kaydı ve Google'a gidince yönetim bağlantısının kaybı risklerini yakaladı; kod her eylemde güncel okuma ve yeni sekme/engelli popup için açık ikinci tıklama akışıyla düzeltildi. Yeni exact-head bağımsız kapanış incelemesi ayrıca gerekir. `control-browser` ile `127.0.0.1:5173` ve `localhost:5173` denendi; cloud tarayıcısı her iki yerel adresi `ERR_BLOCKED_BY_CLIENT` ile engelledi. Yerel görsel/gerçek cihaz kabulü yapılmadı. Kod CI'ı ve cihaz kabulü bu testlerin yerine geçmez. Kullanılan beceriler: `vercel:react-best-practices`, `vercel:agent-browser-verify` ve `control-browser`. Browser doğrulama girişimi başarısızlığı gizlenmez.
 
-Sonraki somut adım: izole code PR'ını #647'ye stack edip exact-head CI ve bağımsız FOCUSED review sonucunu PR receipt'ine bağla; #627/#637/#647 serial merge ve current-main uzlaştırması sonrasında gerçek Apple/Google takvim importunu PUSH-06 kapısında çalıştır.
+Sonraki somut adım: [izole code PR'ı #648](https://github.com/ziyabeey/randevu/pull/648) için düzeltme head'inin CI ve bağımsız FOCUSED review sonucunu PR receipt'ine bağla; #627/#637/#647 serial merge ve current-main uzlaştırması sonrasında gerçek Apple/Google takvim importunu PUSH-06 kapısında çalıştır.

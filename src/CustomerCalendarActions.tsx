@@ -5,6 +5,8 @@ import {
   createCalendarIcs,
   googleCalendarUrl,
   isCalendarExportable,
+  loadExportableCalendarEvent,
+  prepareGoogleCalendarPopup,
   type CustomerCalendarEvent,
 } from './customer-calendar-export';
 
@@ -16,20 +18,35 @@ type Props = {
 export default function CustomerCalendarActions({ event, refreshEvent }: Props) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [googleFallbackUrl, setGoogleFallbackUrl] = useState('');
 
   async function currentEvent() {
-    const value = refreshEvent ? await refreshEvent() : event;
-    if (!isCalendarExportable(value)) throw new Error(t('Bu randevu artık takvime eklenemez.'));
-    return value;
+    try {
+      return await loadExportableCalendarEvent(event, refreshEvent);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'CALENDAR_EVENT_NOT_EXPORTABLE') {
+        throw new Error(t('Bu randevu artık takvime eklenemez.'));
+      }
+      throw error;
+    }
   }
 
   async function openGoogle() {
+    const popup = prepareGoogleCalendarPopup();
     setBusy(true);
     setNotice('');
+    setGoogleFallbackUrl('');
     try {
       const value = await currentEvent();
-      window.location.assign(googleCalendarUrl(value));
+      const url = googleCalendarUrl(value);
+      if (popup) {
+        popup.location.replace(url);
+      } else {
+        setGoogleFallbackUrl(url);
+        setNotice(t('Tarayıcınız yeni sekmeyi engelledi. Google Takvim bağlantısını açın.'));
+      }
     } catch (error) {
+      popup?.close();
       setNotice(error instanceof Error ? error.message : t('Güncel randevu bilgisi alınamadı.'));
     } finally {
       setBusy(false);
@@ -64,5 +81,6 @@ export default function CustomerCalendarActions({ event, refreshEvent }: Props) 
     </div>
     <small>{t('Takvime kaydetme ve hatırlatıcı ayarları cihazınızdaki takvim uygulamasında tamamlanır.')}</small>
     {notice && <p className="public-booking-notice" role="alert">{notice}</p>}
+    {googleFallbackUrl && <a className="public-secondary" href={googleFallbackUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{t('Google Takvim bağlantısını aç')}</a>}
   </section>;
 }

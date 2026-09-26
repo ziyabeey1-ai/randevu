@@ -9,6 +9,12 @@ export type CustomerCalendarEvent = {
   sequence?: number;
 };
 
+export type CalendarPopup = {
+  opener: unknown;
+  location: { replace(url: string): void };
+  close(): void;
+};
+
 const ACTIVE_STATUSES = new Set(['scheduled', 'confirmed']);
 
 function validDate(value: string) {
@@ -64,6 +70,18 @@ export function isCalendarExportable(event: CustomerCalendarEvent) {
     && Boolean(cleanText(event.id))
     && Boolean(start && end && end > start)
     && validTimeZone(event.timezone);
+}
+
+export async function loadExportableCalendarEvent(event: CustomerCalendarEvent, refreshEvent?: () => Promise<CustomerCalendarEvent>) {
+  const current = refreshEvent ? await refreshEvent() : event;
+  if (!isCalendarExportable(current)) throw new Error('CALENDAR_EVENT_NOT_EXPORTABLE');
+  return current;
+}
+
+export function prepareGoogleCalendarPopup(openWindow: () => CalendarPopup | null = () => window.open('about:blank', '_blank') as CalendarPopup | null) {
+  const popup = openWindow();
+  if (popup) popup.opener = null;
+  return popup;
 }
 
 export function calendarTitle(event: CustomerCalendarEvent) {
