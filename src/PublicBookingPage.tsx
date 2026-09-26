@@ -22,6 +22,8 @@ import type { PublicMultiServiceSelectionState } from './PublicMultiServiceSelec
 import PublicBookingInformation, { hasPublicBookingInformation, type BookingInformationContact } from './PublicBookingInformation';
 import PublicNotificationStatus from './PublicNotificationStatus';
 import { customerNotificationStatus, type CustomerNotificationStatus } from '../shared/customer-notification-status';
+import CustomerCalendarActions from './CustomerCalendarActions';
+import type { CustomerCalendarEvent } from './customer-calendar-export';
 
 type PublicBusiness = { name: string; slug: string; timezone: string; local_date: string; max_date: string; step_minutes: number; min_notice_minutes: number; horizon_days: number };
 type PublicService = { service_id: string; name: string; duration_minutes: number; price_minor: number; currency: string };
@@ -80,6 +82,16 @@ type Props = {
   onResultVisibilityChange?: (visible: boolean) => void;
   informationContact?: BookingInformationContact | null;
 };
+
+function confirmationCalendarEvent(appointment: Confirmation, group: GroupConfirmation | undefined, address?: string | null, fallbackBusinessName?: string): CustomerCalendarEvent {
+  return group ? {
+    id: group.groupId, businessName: appointment.business_name ?? fallbackBusinessName ?? t('Randevu'), address, status: group.status,
+    startsAt: group.startsAt, endsAt: group.endsAt, timezone: group.timezone, sequence: group.version,
+  } : {
+    id: appointment.appointment_id, businessName: appointment.business_name ?? fallbackBusinessName ?? t('Randevu'), address, status: appointment.status,
+    startsAt: appointment.starts_at, endsAt: appointment.ends_at, timezone: appointment.timezone,
+  };
+}
 
 const HTTP_TIMEOUT_MS = 10_000;
 const CLOCK_MAX_AGE_MS = 30_000;
@@ -902,6 +914,16 @@ export default function PublicBookingPage({ slug, groupMode = false, multiServic
     const receipt = confirmationRecordId ? bookingRecords.find((record) => record.id === confirmationRecordId) ?? null : null;
     const appointment = confirmation.appointment;
     const outcome = confirmationOutcome(appointment, confirmation.group);
+    const calendarEvent = confirmationCalendarEvent(appointment, confirmation.group, informationContact?.address, page?.business.name);
+    const refreshCalendarEvent = async () => {
+      const marker = confirmation.manageUrl.indexOf('#');
+      const token = marker >= 0 ? confirmation.manageUrl.slice(marker + 1) : '';
+      if (!token) throw new Error(t('Güncel randevu bilgisi alınamadı.'));
+      const fresh = await api<{ appointment: Confirmation; group?: GroupConfirmation }>('/api/manage/view', {
+        method: 'POST', csrf: 'skip', body: JSON.stringify({ token }),
+      });
+      return confirmationCalendarEvent(fresh.appointment, fresh.group, informationContact?.address, page?.business.name);
+    };
     return <main className="public-booking-shell"><section className="public-booking-card public-confirmation">
       <div className={`public-result-mark is-${outcome.tone}`}>{outcome.symbol}</div><p className="public-kicker">{outcome.kicker}</p>
       <h1>{appointment.business_name ?? page?.business.name ?? t('Randevu')}</h1>
@@ -918,6 +940,7 @@ export default function PublicBookingPage({ slug, groupMode = false, multiServic
       {promoCode && outcome.active && <PromoAttachResult manageUrl={confirmation.manageUrl} code={promoCode} />}
       <p className="public-confirmation-note">{outcome.active ? t('Yönetim bağlantınızı kaybetmeyin; bu bağlantı randevuyu taşıma ve iptal etme yetkisi verir.') : t('Randevu ayrıntılarınızı yönetim bağlantısından görüntüleyebilirsiniz.')}</p>
       <PublicBookingInformation slug={slug} contact={informationContact} prefix="result" />
+      <CustomerCalendarActions event={calendarEvent} refreshEvent={refreshCalendarEvent} />
       <a className="public-primary" href={confirmation.manageUrl}>{outcome.active ? t('Randevumu yönet') : t('Randevu ayrıntılarını aç')}</a>
       {confirmationStorageError && <div className="public-booking-notice" role="alert">{confirmationStorageError} {t('Bu kayıt tamamlanana kadar yeni randevu başlatmayın.')}</div>}
       {unpersistedConfirmation && <button className="public-secondary" type="button" onClick={() => void retryConfirmationPersistence()}>{t('Güvenli kaydı yeniden dene')}</button>}

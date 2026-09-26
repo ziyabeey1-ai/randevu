@@ -1557,6 +1557,15 @@ const en: Record<string, string> = {
   'Şu an seçili': 'Currently selected',
   'Şu anda online randevuya açık hizmet bulunmuyor.': 'No services are open for online booking right now.',
   'Şu anda seçilebilecek hizmet bulunmuyor. Kısa süre sonra yeniden deneyin.': 'No services can be chosen right now. Try again shortly.',
+  'Bu randevu artık takvime eklenemez.': 'This appointment can no longer be added to a calendar.',
+  'Bu tek seferlik bir eklemedir. Randevu değişirse takviminiz otomatik güncellenmez; güncel bilgiyi bu sayfadan kontrol edip yeniden ekleyin.': 'This is a one-time addition. If the appointment changes, your calendar will not update automatically; check the latest details on this page and add it again.',
+  'Google Takvim': 'Google Calendar',
+  'Güncel randevu bilgisi alınamadı.': 'The latest appointment details could not be loaded.',
+  'Takvim dosyasını indir (.ics)': 'Download calendar file (.ics)',
+  'Takvime ekle': 'Add to calendar',
+  'Takvime kaydetme ve hatırlatıcı ayarları cihazınızdaki takvim uygulamasında tamamlanır.': 'Saving to your calendar and reminder settings are completed in your device calendar app.',
+  'Tarayıcınız yeni sekmeyi engelledi. Google Takvim bağlantısını açın.': 'Your browser blocked the new tab. Open the Google Calendar link.',
+  'Google Takvim bağlantısını aç': 'Open Google Calendar link',
 };
 
 export default en;
