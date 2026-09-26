@@ -30,8 +30,8 @@ const supabaseUrl = process.env.SUPABASE_URL.replace(/\/$/, '');
 const anonKey = process.env.SUPABASE_ANON_KEY;
 const businessA = 'f1700000-0000-4000-8000-000000000001';
 const businessB = 'f1700000-0000-4000-8000-000000000002';
-const netgsmConfig = netgsmWhatsappConfigured(process.env);
-if (!netgsmConfig) throw new Error('G16 Netgsm acceptance configuration is invalid');
+const netgsmConfig = storageOnly ? null : netgsmWhatsappConfigured(process.env);
+if (!storageOnly && !netgsmConfig) throw new Error('G16 Netgsm acceptance configuration is invalid');
 
 function jsonBody(text) {
   if (!text) return null;
