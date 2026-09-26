@@ -126,7 +126,7 @@ begin
   perform dblink_exec(
     'iyz02_blocker',
     format(
-      'select 1 from public.iyzico_payment_attempts where id=%L::uuid for update',
+      'do $block$ begin perform 1 from public.iyzico_payment_attempts where id=%L::uuid for update; end $block$;',
       v_attempt
     )
   );
