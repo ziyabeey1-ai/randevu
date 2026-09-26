@@ -80,7 +80,30 @@ test('storage-only G16 reaches the Storage path without NetGSM settings or provi
 
 test('full G16 still fails closed when NetGSM settings are missing', () => {
   const runner = new URL('../scripts/staging-g16-acceptance.mjs', import.meta.url).href;
-  const output = spawnSync(process.execPath, [runner], {
+  const providerSource = `
+    export const normalizeWhatsappPhone = () => { throw new Error('PROVIDER_SHOULD_NOT_RUN'); };
+    export const netgsmWhatsappConfigured = () => { throw new Error('PROVIDER_SHOULD_NOT_RUN'); };
+    export const sendWhatsappVerificationCode = async () => { throw new Error('PROVIDER_SHOULD_NOT_RUN'); };
+  `;
+  const bootstrap = `
+    import { registerHooks } from 'node:module';
+    registerHooks({
+      resolve(specifier, context, next) {
+        if (specifier.endsWith('/worker/whatsapp-verify.ts')) return {
+          url: new URL(specifier, context.parentURL).href, shortCircuit: true,
+        };
+        return next(specifier, context);
+      },
+      load(url, context, next) {
+        if (url.endsWith('/worker/whatsapp-verify.ts')) return {
+          format: 'module', source: ${JSON.stringify(providerSource)}, shortCircuit: true,
+        };
+        return next(url, context);
+      },
+    });
+    await import(${JSON.stringify(runner)});
+  `;
+  const output = spawnSync(process.execPath, ['--input-type=module', '--eval', bootstrap], {
     encoding: 'utf8',
     timeout: 10000,
     maxBuffer: 128 * 1024,
@@ -100,4 +123,5 @@ test('full G16 still fails closed when NetGSM settings are missing', () => {
   assert.ifError(output.error);
   assert.equal(output.status, 1);
   assert.match(output.stderr, /Missing required G16 staging environment variable: NETGSM_USERCODE/);
+  assert.doesNotMatch(output.stdout + output.stderr, /PROVIDER_SHOULD_NOT_RUN/);
 });
