@@ -1840,6 +1840,23 @@
           "file": "supabase/tests/f16_account_plan.sql"
         }
       ]
+    },
+    {
+      "name": "Verify IYZ-02A durable iyzico payment attempts and atomic F14 ledger bridge",
+      "steps": [
+        {
+          "database": "yzt_test",
+          "file": "supabase/migrations/20260926223000_iyzico_payment_attempts.sql"
+        },
+        {
+          "database": "yzt_test",
+          "file": "supabase/tests/iyzico_payment_attempts.sql"
+        },
+        {
+          "database": "yzt_test",
+          "file": "supabase/tests/iyzico_payment_attempts_concurrency.sql"
+        }
+      ]
     }
   ]
 }
