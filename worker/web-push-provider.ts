@@ -99,10 +99,13 @@ function validEndpoint(raw: string) {
 }
 
 function validatePayload(payload: WebPushPayload) {
-  if (payload.v !== 1 || !WEB_PUSH_EVENTS.has(payload.event)) throw new Error('invalid payload');
+  const candidate = payload as unknown as Record<string, unknown>;
+  const version = candidate.v;
+  const event = candidate.event;
   const ownKeys = Object.keys(payload).sort();
-  if (ownKeys.join(',') !== 'event,v') throw new Error('invalid payload');
-  const bytes = encoder.encode(JSON.stringify({ v: 1, event: payload.event }));
+  if (version !== 1 || typeof event !== 'string' || !WEB_PUSH_EVENTS.has(event) ||
+      ownKeys.join(',') !== 'event,v') throw new Error('invalid payload');
+  const bytes = encoder.encode(JSON.stringify({ v: version, event }));
   if (bytes.length > WEB_PUSH_MAX_PAYLOAD_BYTES) throw new Error('payload too large');
   return bytes;
 }

@@ -80,6 +80,34 @@ test('PUSH-03 encrypts one RFC 8291 aes128gcm record and signs distinct RFC 8292
   assert.deepEqual(JSON.parse(new TextDecoder().decode(plaintext.slice(0, -1))), { v: 1, event: 'appointment.changed' });
 });
 
+test('PUSH-03 snapshots accessor payload once before encryption', async () => {
+  const data = await fixture();
+  const sensitive = 'customer-phone-5551234567';
+  let eventReads = 0;
+  const payload = {
+    v: 1,
+    get event() {
+      eventReads += 1;
+      return eventReads === 1 ? 'appointment.changed' : sensitive;
+    },
+  };
+  let encryptedBody;
+  const result = await sendWebPush({
+    ...data,
+    payload,
+    fetchImpl: async (_input, init) => {
+      encryptedBody = new Uint8Array(init.body);
+      return new Response(null, { status: 202 });
+    },
+  });
+  assert.deepEqual(result, { category: 'accepted', providerStatus: 202 });
+  assert.equal(eventReads, 1);
+  const plaintext = await decrypt(encryptedBody, data.receiver, Buffer.alloc(16, 9));
+  const decoded = new TextDecoder().decode(plaintext.slice(0, -1));
+  assert.deepEqual(JSON.parse(decoded), { v: 1, event: 'appointment.changed' });
+  assert.equal(decoded.includes(sensitive), false);
+});
+
 test('PUSH-03 rejects invalid keys, oversized/private payload shapes and unsafe endpoints before fetch', async () => {
   const data = await fixture();
   const invalid = [
