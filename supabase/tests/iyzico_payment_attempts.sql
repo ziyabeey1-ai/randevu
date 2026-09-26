@@ -399,6 +399,98 @@ $iyzblocknew$;
 
 reset role;
 
+-- A provider payment ID already bound to another attempt can never be
+-- re-applied to a second ticket.
+set role authenticated;
+select set_config('request.jwt.claim.sub','2a000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"amr":[{"method":"password"}]}',false);
+
+do $iyzproviderconflictprep$
+declare
+  v_ticket jsonb;
+  v_attempt jsonb;
+begin
+  v_ticket := public.open_walk_in_ticket_guarded(
+    '2a100000-0000-4000-8000-000000000001',
+    '2a300000-0000-4000-8000-000000000001',
+    'iyz02-conflict-open',
+    repeat('a',63)||'1'
+  );
+  v_ticket := public.add_ticket_service_line_guarded(
+    '2a100000-0000-4000-8000-000000000001',
+    (v_ticket->>'ticketId')::uuid,
+    '2a400000-0000-4000-8000-000000000001',
+    null,1,
+    'iyz02-conflict-add',
+    repeat('a',63)||'2'
+  );
+  perform set_config('iyz02.conflict_ticket',v_ticket->>'ticketId',false);
+
+  v_attempt := public.reserve_iyzico_payment_attempt_guarded(
+    '2a100000-0000-4000-8000-000000000001',
+    (v_ticket->>'ticketId')::uuid,
+    'sandbox-primary',
+    'iyz02-conflict-reserve',
+    repeat('a',63)||'3'
+  );
+  perform set_config('iyz02.conflict_attempt',v_attempt->>'attemptId',false);
+
+  perform public.bind_iyzico_payment_checkout_guarded(
+    '2a100000-0000-4000-8000-000000000001',
+    (v_attempt->>'attemptId')::uuid,
+    repeat('a',64),
+    'v1:ciphertext-fixture-conflict',
+    repeat('b',64),
+    now()+interval '30 minutes'
+  );
+end
+$iyzproviderconflictprep$;
+
+reset role;
+set role anon;
+
+do $iyzproviderconflict$
+begin
+  begin
+    perform public.commit_iyzico_verified_payment(
+      current_setting('iyz02.conflict_attempt')::uuid,
+      'sandbox-primary',
+      repeat('a',64),
+      repeat('b',64),
+      '9000001',
+      60000,
+      'TRY'
+    );
+    raise exception 'IYZ-02A duplicate provider payment unexpectedly applied to another ticket';
+  exception when others then
+    if position('IYZICO_PROVIDER_PAYMENT_CONFLICT' in sqlerrm)=0 then raise; end if;
+  end;
+end
+$iyzproviderconflict$;
+
+reset role;
+
+do $iyzproviderconflictcheck$
+declare
+  v_attempt public.iyzico_payment_attempts;
+  v_projection jsonb;
+begin
+  select * into v_attempt
+  from public.iyzico_payment_attempts
+  where id=current_setting('iyz02.conflict_attempt')::uuid;
+  perform pg_temp.iyz_assert(v_attempt.status='initialized','provider conflict leaves attempt retry/reconcile-safe');
+  perform pg_temp.iyz_assert(v_attempt.provider_payment_id is null,'provider conflict does not bind foreign payment');
+  perform pg_temp.iyz_assert(v_attempt.payment_event_id is null,'provider conflict creates no ledger event');
+
+  v_projection:=public.f14_ticket_projection(
+    '2a100000-0000-4000-8000-000000000001',
+    current_setting('iyz02.conflict_ticket')::uuid
+  );
+  perform pg_temp.iyz_assert((v_projection->>'paidMinor')::int=0,'provider conflict leaves second ticket unpaid');
+  perform pg_temp.iyz_assert((v_projection->>'balanceMinor')::int=60000,'provider conflict leaves second ticket balance intact');
+end
+$iyzproviderconflictcheck$;
+
 -- Provider payment identity is account/environment unique across attempts.
 do $iyzproviderunique$
 declare
