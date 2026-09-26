@@ -11,7 +11,7 @@ function runScenario(scenario = {}) {
     import childProcess from 'node:child_process';
     import { registerHooks, syncBuiltinESMExports } from 'node:module';
     const scenario = ${JSON.stringify(scenario)};
-    const trace = { events: [], sqlBounded: true, httpBounded: true, anonymousBearer: null, fixtureHex: '', selected: { a: false, b: false } };
+    const trace = { events: [], sqlBounded: true, httpBounded: true, anonymousBearer: null, fixtureHex: '', selected: { a: false, b: false }, postDeleteStorageReads: 0 };
     const secret = 'SYNTHETIC_PASSWORD_DO_NOT_LOG';
     process.on('exit', () => console.log('G16_TEST_TRACE=' + JSON.stringify(trace)));
     const realLog = console.log;
@@ -125,6 +125,7 @@ function runScenario(scenario = {}) {
         }
         if (url.pathname.endsWith('/content')) {
           if (foreign) return denied('workerDenied');
+          if (deleted) return json({ error: { code: 'PRIVATE_MEDIA_NOT_FOUND' } }, 404);
           const bytes = Buffer.from(fixture);
           if (scenario.workerCorrupt) bytes[bytes.length - 1] ^= 1;
           return new Response(bytes, { headers: { 'content-type': 'image/webp', 'cache-control': 'private, no-store' } });
@@ -140,7 +141,16 @@ function runScenario(scenario = {}) {
         if (url.pathname === '/auth/v1/token') return json({ access_token: JSON.parse(init.body).email.startsWith('b@') ? 'owner-b' : 'owner-a' });
         if (url.pathname.startsWith('/storage/v1/object/appointment-private-media/')) {
           const auth = headers.get('authorization');
-          if (deleted) return denied('afterDelete');
+          if (deleted) {
+            trace.postDeleteStorageReads += 1;
+            if (trace.postDeleteStorageReads <= Number(scenario.afterDeleteCacheHits ?? 0)) {
+              return new Response(Buffer.from(fixture), {
+                status: 200,
+                headers: { 'content-type': 'image/webp', 'cf-cache-status': 'HIT' },
+              });
+            }
+            return denied('afterDelete');
+          }
           if (auth === 'Bearer owner-b') return denied('storageDenied');
           if (auth !== 'Bearer owner-a') {
             trace.anonymousBearer = auth;
@@ -167,6 +177,7 @@ function runScenario(scenario = {}) {
       STAGING_OWNER_B_EMAIL: 'b@example.invalid', STAGING_OWNER_B_PASSWORD: 'synthetic-b',
       NETGSM_USERCODE: '0000000000', NETGSM_PASSWORD: 'synthetic-netgsm',
       NETGSM_ACCEPTANCE_PHONE: '+905000000000',
+      G16_STORAGE_DELETE_POLL_MS: '25',
     },
   });
   assert.ifError(result.error);
@@ -292,6 +303,14 @@ test('G16 does not treat access denial as proof of post-delete object absence', 
   const result = runScenario({ afterDelete: { status: 403, body: { code: 'AccessDenied' } } });
   assertFailure(result);
   assert.match(result.stderr, /post-delete read/);
+});
+
+test('G16 tolerates bounded stale CDN hits only after immediate Worker denial and metadata cleanup', () => {
+  const result = runScenario({ afterDeleteCacheHits: 2 });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.trace.postDeleteStorageReads, 3);
+  assert.match(result.stdout, /cache invalidated after 2 stale authenticated hit/);
+  assert.ok(result.trace.events.includes('storage_metadata_readback'));
 });
 
 test('G16 preserves recovery context when media deletion fails', () => {

@@ -214,6 +214,37 @@ async function storageRead(path, bearer = null) {
   return request(`${supabaseUrl}/storage/v1/object/appointment-private-media/${path}`, { headers });
 }
 
+const DELETE_CACHE_MAX_MS = 65_000;
+const DELETE_CACHE_POLL_MS = Math.max(
+  25,
+  Math.min(5_000, Number(process.env.G16_STORAGE_DELETE_POLL_MS ?? '2000') || 2000),
+);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requireStorageDeletion(path, bearer) {
+  const deadline = Date.now() + DELETE_CACHE_MAX_MS;
+  let staleHits = 0;
+  while (true) {
+    const response = await storageRead(path, bearer);
+    if ([400, 404].includes(response.status)) {
+      await requireStorageDenial(response, 'Hosted Storage post-delete read was not a fail-closed 4xx', true);
+      if (staleHits) console.log(`G16 Storage delete cache invalidated after ${staleHits} stale authenticated hit(s).`);
+      return;
+    }
+    if (response.status !== 200) {
+      await requireStorageDenial(response, 'Hosted Storage post-delete read was not a fail-closed 4xx', true);
+    }
+    staleHits += 1;
+    if (Date.now() >= deadline) {
+      throw new Error(`Hosted Storage post-delete read remained cache-visible after ${staleHits} bounded probe(s)`);
+    }
+    await sleep(DELETE_CACHE_POLL_MS);
+  }
+}
+
 function validWebp() {
   // Complete 1x1 lossless WebP, not merely a dimensions header.
   return Buffer.from('UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQkEY0qP+BiOh/AAA=', 'base64');
@@ -336,8 +367,25 @@ async function verifyHostedPrivateStorage() {
     await requireStorageDenial(await storageRead(storagePath, ownerBToken), 'Hosted Storage cross-tenant RLS denial was not a fail-closed 4xx');
     await requireStorageDenial(await storageRead(storagePath), 'Hosted Storage anonymous denial was not a fail-closed 4xx');
 
+    const deletedMediaId = mediaId;
     await deleteMedia();
-    await requireStorageDenial(await storageRead(storagePath, ownerAToken), 'Hosted Storage post-delete read was not a fail-closed 4xx', true);
+
+    // Product access must disappear immediately because the media row is gone,
+    // even while Supabase's CDN can briefly retain the authenticated object
+    // bytes at an edge. This is the user-visible authorization boundary.
+    const workerAfterDelete = await appRequest(ownerA.jar, `/api/private-media/${deletedMediaId}/content`, {
+      headers: { 'X-YZT-Business': businessA, Accept: 'image/webp' },
+    });
+    if (workerAfterDelete.response.status !== 404
+        || workerAfterDelete.data?.error?.code !== 'PRIVATE_MEDIA_NOT_FOUND') {
+      throw new Error(`Hosted private-media Worker post-delete denial failed with HTTP ${workerAfterDelete.response.status}`);
+    }
+
+    // Supabase documents CDN invalidation after delete as asynchronous and
+    // potentially taking up to 60 seconds. Metadata is already proven absent
+    // in deleteMedia(); now require the authenticated raw object URL itself to
+    // stop serving cached bytes within a bounded 65-second window.
+    await requireStorageDeletion(storagePath, ownerAToken);
   } catch (error) {
     primaryFailure = error;
   } finally {
