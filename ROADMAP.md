@@ -11,6 +11,7 @@
 | Faz sırası ve bağımlılık planı nedir? | Bu ROADMAP + `docs/plan/phase-*.md` |
 | Ortak teknik kurallar nedir? | [K01/K02/K03](docs/plan/architecture-contracts.md), [DECISIONS](DECISIONS.md) |
 | Release/pilot ne zaman kabul edilir? | [MVP_ACCEPTANCE](MVP_ACCEPTANCE.md), F17-04/05 |
+| SMS/WhatsApp'sız ilk yayın nasıl teslim edilir? | [Web Push ürün/kabul sözleşmesi](docs/plan/web-push-product-ready.md), TASKS PUSH track'i |
 | Marketing homepage yönü nedir? | [docs/brand/README.md](docs/brand/README.md), MKT-01 / Issue #70 |
 
 TASKS sahiplik/durum kaynağıdır. ROADMAP yalnız ürün sırası ve bağımlılıkları özetler; eski PR/branch durumlarını tekrar etmez.
@@ -63,6 +64,8 @@ MKT-01, 54 MVP ürün/teknik görevinden ayrı marketing/site track'idir. Bağla
 Ürün track'i ile ortak route/entry, domain veya runtime alanına girecek marketing değişiklikleri shared-writer kuralına uyar ve ürün kabulünü varsayarak ilerlemez.
 
 ## Bitti sayılma kuralı
+
+26 Eylül kullanıcı kararıyla `push_first` ilk yayın profili [PUSH planını](docs/plan/web-push-product-ready.md) gerektirir: transportsuz rezervasyon/iletişim yetkisi → abonelik/inbox → gönderim/hatırlatma → PWA/izin deneyimi + takvim → ortak sürüm/gerçek cihaz/pilot. Bu ek kapsam mevcut 54 kartın tarihsel kabulünü yeniden yazmaz; onların tamam olması yeni profilin hazır olduğu anlamına gelmez. PUSH dilimleri ve sahiplik TASKS'tadır. DOMAIN-01/shared-origin ve açık G16/staging yazımları seri koordine edilir; mevcut salon sitesi planı veya iyzico işi devralınmaz.
 
 Bir görev yalnız davranış kanıtı + riskin gerektirdiği bağımsız review + kabul edilen exact-head CI + main merge birlikte sağlandığında `Tamamlandı` olur. Staging/CI yeşili tek başına pilot kabulü değildir.
 

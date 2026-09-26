@@ -14,6 +14,7 @@ Bu belge Randevu ürününün dış marka ve internet origin sınırını netle�
 | Marketing | `randevukolay.net` | Randevu Kolay satış/ürün/SEO sitesi |
 | Public işletme/salon | `{business-slug}.randevukolay.net` | Müşterinin gördüğü salon profili, hizmet, müsaitlik, booking ve ilgili public akışlar |
 | Transactional customer-facing domain | `*.randevukolay.net` altında | Bildirim/mail/public yardımcı originler gerektiğinde burada yaşar; Kepenk.ai altında yeni customer-facing Randevu subdomain’i açılmaz |
+| Ortak müşteri PWA/bildirim merkezi | `musteri.randevukolay.net` | 26 Eylül PUSH hedefi; isteğe bağlı müşteri cihazı/randevu enrollment'ı, operator oturumu veya telefon-temelli ortak müşteri kimliği değildir |
 | Yüksek paket custom domain | doğrulanmış işletme domaini | Gelecekte customer-facing public surface entitlement; private app domaini değildir |
 
 Dışarıdan görülen ürün markası **Randevu Kolay**'dır. `Kepenk.ai` parent/platform markasıdır; gerektiğinde ikincil attribution olabilir ancak salon müşterisinin canonical booking adresi veya marketing markası değildir.
@@ -52,6 +53,7 @@ Değişmezler:
 - anonim public yüzey operator mutation kontrollerini veya private object path'lerini açmaz;
 - cross-tenant slug/domain çakışması fail-closed olur;
 - reserved host adları ayrıca ayrılır (`www`, `api`, `admin`, `app`, `mail`, `support`, `staging` gibi altyapı adları business slug olamaz);
+- 26 Eylül Push kararıyla `musteri` de reserved hedeftir; mevcut slug çakışması preflight'ta incelenir, varsa mevcut işletme sessizce taşınmaz. [PUSH-02](web-push-product-ready.md#4-origin-ve-müşteri-cihazı-bağlama--push-02) ile DOMAIN-01 aynı host/cookie dosyalarına paralel yazmaz;
 - readiness, abuse/rate limit, public sanitization ve tenant isolation mevcut public-booking güvenlik çizgisini korur.
 
 ## 4. Mevcut route'ların geçişi
@@ -78,6 +80,8 @@ Exact redirect/status/cache davranışı DOMAIN-01 implementation paketinde brow
 - eski MKT `/app` same-origin varsayımı shared cutover sırasında yeni domain contract'a uyarlanır.
 
 ## 6. Transactional mail/domain
+
+26 Eylül `push_first` hedefinde SMS/WhatsApp kullanılmaz; mevcut isteğe bağlı randevu e-postası korunur ve yeni otomatik Push→e-posta fallback'i eklenmez. Ortak müşteri Push origin'i `musteri.randevukolay.net`, ayrı müşteri manifest ve host-only cihaz oturumuyla kurulur; salon origin'leriyle service worker/cookie paylaşımı varsayılmaz. Birden fazla randevu yalnız ayrı capability enrollment'ıyla bağlanır. DNS/TLS/route/izin ve gerçek iPhone kabulü [PUSH planındaki](web-push-product-ready.md) ayrı uygulama kapısıdır; bu satır canlı domain teslimi değildir. Aşağıdaki sender geçişi mevcut auth ve isteğe bağlı randevu e-postası ihtiyacı için ayrı kapsam olmaya devam eder.
 
 Mevcut tarihsel runbook `notify.kepenk.ai` kullanmaktadır. Yeni ürün sınırı gereği customer-facing Randevu mail identity uzun vadede Randevu Kolay domainine taşınır, örneğin `notify.randevukolay.net`.
 

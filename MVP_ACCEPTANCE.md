@@ -15,21 +15,21 @@ Bu dosya plan v3 birleşik release/pilot kabul matrisidir. Bu birleşik sürüm 
 | --- | --- | --- | --- | --- |
 | M01 | Kayıt, e-posta doğrulama, giriş, parola kurtarma, çıkış | Geçerli akış tamamlanır; bozuk/süresi dolan link reddedilir; session/Origin/CSRF kontrolleri işler | S01, S02, F10-01, F10-06 | Bekliyor |
 | M02 | İşletme kurulum, davet, rol düşürme ve işletme geçişi | Son owner korunur; pasif üyelik erişimi keser; eski işletmenin bekleyen cevabı yeni ekrana sızmaz | F10-02…04, F10-06 | Bekliyor |
-| M03 | Salon profili → iki hizmet/farklı personel → uygun saat → özet → kayıt | Süre, sıra, fiyat/aralık ve gerçek atama tutarlıdır; aynı kayıt iki işletme yüzeyine yansır | F11-01/02, F12-01…05 | Bekliyor |
+| M03 | Salon profili → iki hizmet/farklı personel → uygun saat → özet → kayıt | Süre, sıra, fiyat/aralık ve gerçek atama tutarlıdır; aynı kayıt iki işletme yüzeyine yansır; push_first profilinde SMS/WhatsApp veya Push izni gerekmez, yeni admission ve doğrulanmamış contact sınırı uygulanır | F11-01/02, F12-01…05; PUSH-01/04 | Bekliyor |
 | M04 | Eski tek hizmetli randevu/link ve veri yükseltme | Eski kimlik/link/komut/capability/recovery, snapshot ve audit korunur; pending/leased/sent outbox geçişi yeniden mail veya kayıp yetki yaratmaz | F11-03/04 | Bekliyor |
 | M05 | Commit sonrası cevap kaybı, provision hatası ve sayfa yenileme | Aynı sonuç/erişim kurtarılır; ikinci rezervasyon oluşmaz; yanlış kanıt yetki vermez | F09-01/02/05 | Bekliyor |
 | M06 | 100 eşzamanlı aynı slot isteği ve çok satırlı çakışma | Tek kazanan; yarım grup yok; tamponlar, bitişik aralıklar, kapanış ve DST sınırları korunur | F11-02/04 | Bekliyor |
 | M07 | Grup taşıma/iptal, eski sürüm ve başarısız yeni saat | Başarısız taşıma bütün eski saatleri korur; sürüm çakışması sessiz ezilmez; yetki yalnız ilgili gruptadır | F11-03/04 | Bekliyor |
 | M08 | Gün/hafta/liste, hızlı filtre, başka cihazdan rezervasyon | Aynı veri/filtre; eski cevap koruması; görünür takvime en geç 30 saniyede, odağa dönüşte hemen yenilemeyle yansıma | F13-01…04 | Bekliyor |
 | M09 | Operatör yeni randevu/kapanış/detay ve tekrarlayan seri | Referans alan sırası korunur; seri çakışmaları önizlenir; ilk seri atomik, geçmiş oluşum korunur | F13-03, F16-01 | Bekliyor |
-| M10 | SalonApp alt menü, müşteri arama/geçmiş ve PWA | Aynı işletme/randevu kimlikleri; kurulum/geri gezinme/güncelleme doğru; özel API verisi çevrimdışı sızmaz | F10-05, F14-01/05 | Bekliyor |
+| M10 | SalonApp alt menü, müşteri arama/geçmiş ve operator/müşteri PWA | Aynı işletme/randevu kimlikleri; ayrı manifest/origin ve isteğe bağlı müşteri kurulumu; deny/re-enable/kapalı uygulama/güncelleme doğru; Push-only SW özel API verisi cache'lemez ve offline mali işlem kuyruğu üretmez | F10-05, F14-01/05; PUSH-02/04 | Bekliyor |
 | M11 | Randevudan/randevusuz adisyon; 600 TL için 200 nakit + 400 kart | Tek adisyon, 600 tahsilat/0 bakiye; tekrar tıklama çift işlem yaratmaz; randevu durumu ödeme yerine geçmez | F14-02…05 | Bekliyor |
 | M12 | Eşzamanlı ödeme/iskonto/iade; izinsiz mali işlem | Bakiye bozulmaz; fazla ödeme/iade reddedilir; düzeltme auditlidir; staff varsayılan mali yetki kazanmaz; owner izni geri alınca açık formdan yazım da reddedilir | F14-03/05 | Bekliyor |
 | M13 | Son ürün satışı, iptal/iade ve stok | Stok eksiye düşmez; tekrar satış stok/tahsilatı iki kez etkilemez; fiziksel geri dönüş açıkça kaydedilir | F15-01/02 | Bekliyor |
 | M14 | Masraf, gün sonu, nakit/kart ve kalan bakiye raporu | 1.000 tahsilat − 100 iade − 150 masraf = 750 net hareket; tahsil edilmemiş bakiye giriş değildir; gün sınırı doğrudur | F15-03/04 | Bekliyor |
 | M15 | Paket son hakkı, kampanya son kullanımı ve fiyat yansıması | Çift tüketim yok; koşullar sunucuda; müşteri özeti/adisyon tutarlı; paket satışı/kullanımı çift gelir sayılmaz | F16-05/06 | Bekliyor |
 | M16 | İndirim/paket/kısmi tahsilat/iade sonrası prim raporu | Tanımlı hesapla kaynak hareketler mutabıktır; geçmiş oran/snapshot korunur | F16-07 | Bekliyor |
-| M17 | E-posta/SMS, tarayıcı kapalı yeniden deneme, sağlayıcı kesintisi | Randevu sonucu korunur; eski saat mesajı gitmez; kabul/teslim ayrıdır; gerçek alıcıda teslim kanıtı ve tekrar sınırı vardır | S03, F09-03/05, F16-01/02 | Bekliyor |
+| M17 | Web Push, gerçek iPhone/Android, kapalı uygulama, izin yokluğu, sağlayıcı kesintisi ve takvim | Randevu/inbox sonucu korunur; eski olay için yeni gönderim yok; kabul/cihaz gözlemi/açılma/teyit ayrıdır; gerçek cihaz receipt'i ve bounded retry; SMS/WhatsApp transport çağrısı 0; takvim importu sürekli sync diye gösterilmez | S03, F09-03/05, F16-01; PUSH-02…06 | Bekliyor |
 | M18 | Özel fotoğraf, public salon görseli, yorum/geri bildirim, destek | Özel içerik yetkisiz açılmaz; yayın kararı uygulanır; yorumun kaynağı doğrulanır; destek yolu çalışır | F12-02, F16-03/04 | Bekliyor |
 | M19 | Hesap menüsü, dil, gerçek plan/erişim durumu | İşletme/parola/çıkış ortak akışta; dil tercihi uygulanır; plan gerçek kayıttır; müşteri yönetimi erişim davranışı bellidir | F16-08 | Bekliyor |
 | M20 | İki tenant, ID tahmini, doğrudan RPC, sahte receipt ve toplu public istek | Yetkisiz okuma/yazma/bağlantı engellenir; Worker atlama yolu kapalı; aşırı istek sınırlanır | S04, S08, F09-04, F10-02/06, F14-05, F17-02 | Bekliyor |
@@ -38,12 +38,25 @@ Bu dosya plan v3 birleşik release/pilot kabul matrisidir. Bu birleşik sürüm 
 | M23 | 1–3 işletmeyle bir tam iş günü ve mutabakat | Kurulumdan randevusuz satış/gün sonuna yolculuk tamam; kritik kusur kapalı, destek ve devir kaydı var | F17-05 | Bekliyor |
 | M24 | Recovery sırasında hatalı/replay confirmation, marker expiry/tamper/refresh | Recovery yetkisi normal tenant yetkisine yükselmez; gerçek public e-posta/PKCE/parola akışı geçer | S01, S02 | Bekliyor |
 | M25 | Feature API'de auth sağlayıcısı 503; Origin/CSRF eksik/yanlış | Geçici arıza oturumu silmez; bütün cookie mutation'lar ortak guard kullanır; public/capability sınırları ayrı çalışır | S02 | Bekliyor |
-| M26 | Provider cevabı kayıp; randevu/işletme değişimi; cancel/send yarışı | Aynı anahtar farklı payload taşımaz; eski sürüm için yeni gönderim başlatılmaz; belirsiz dış teslim sınırı kayıtlıdır | S03, F11-03, F16-02 | Bekliyor |
+| M26 | Push cevabı kayıp; randevu/işletme/üyelik değişimi; cancel/send yarışı; eski bildirime teyit | Aynı anahtar farklı payload taşımaz; eski sürüm/iptal edilmiş yetki için yeni gönderim başlamaz; belirsiz dış teslim ayrı kalır; stale teyit yeni sürümü onaylamaz; endpoint ve token payload/loga sızmaz | S03, F11-03; PUSH-02/03/04 | Bekliyor |
 | M27 | Çok sayıda proof'lu tekrar, manage slot/cancel ve direct RPC | Ayrı kaynak kotaları işler, meşru sonuç kurtarma ve idempotency korunur; bypass yok | S04 | Bekliyor |
 | M28 | DB secret provisioning sonrası Worker deploy hatası / eşzamanlı run | Eski çalışan sürüm korunur veya tutarlı geri dönüş yapılır; tamamlanan rotasyon eski yetkiyi kapatır | S05 | Bekliyor |
 | M29 | Docs-only ve code/migration PR, unutulan test, kırmızı check | Gereken davranış testleri gerçekten koşar; CI tekrarı azalır; required aggregate check test edilen HEAD'de zorunludur | S06 | Bekliyor |
 | M30 | Büyük veri/listeler, yavaş RPC, bakım/retention ve timeout sonrası tekrar | K03 bütçeleri ölçülür; kişisel operasyon içeriği zamanında ayıklanır; aktif yetki/idempotency ve mali geçmiş korunur | S07, F11-02/04, F17-03 | Bekliyor |
 | M31 | Yeni migration ile table/sequence/function/view ve medya | Explicit grant + RLS/erişim politikası doğru; anon/inactive/cross-tenant negatifleri ve yetkili pozitifler geçer | S08, F12-02, F16-03 | Bekliyor |
+
+## Web Push ilk yayın profilinin kabulü
+
+26 Eylül kararının ayrıntılı [ürün/kabul sözleşmesi](docs/plan/web-push-product-ready.md) bu matristeki aynı M01…M31 kimliklerini genişletir. Yeni satır numarası veya paralel canlı durum tablosu yoktur. Tarihsel WhatsApp OTP kabulü yeni transportsuz rezervasyonun kanıtı değildir; PUSH-01…06 pilot öncesi kabulü olmadan `push_first` profiline F17-04 kabulü verilmez. PUSH-06 M23'ü beklemez; kabul sırası PUSH-01…06 → F17-04 → F17-05/M23 → G17'dir. [#644](https://github.com/ziyabeey/randevu/pull/644) preflight continuation'ı PUSH-06 kapsamında yeni profil kanıtlarını fail-closed kontrol eder; bu docs PR'ı script'i değiştirmez.
+
+- M01/M24/M25: mevcut işletme e-posta auth/recovery ve session güvenliği korunur; SMS/WhatsApp kapalı diye auth yetkisi gevşetilmez.
+- M03/M05/M20/M27/M31: tekli/grup transportsuz booking, bounded admission ve recovery; doğrulanmamış telefon/e-posta başka CRM kaydı/geçmiş/paket yetkisi vermez; doğrudan RPC ve cross-tenant/actor negatifleri geçer.
+- M07/M17/M26: cancel/reschedule/seri sürümleri, abonelik/üyelik/capability iptali, yanlış/stale teyit ve provider kabul-yanıt kaybı aynı release adayında denenir.
+- M10/M17/M21: gerçek iPhone standart/declarative yolları ve Android; ana ekrana ekleme, normal sekmeden standalone'a enrollment, izin reddi/yenileme, kapalı uygulama ve offline/reconnect. Emülasyon gerçek teslimin yerine geçmez.
+- M17/M28/M30: bütün yeni booking olaylarında SMS/WhatsApp isteği 0; mevcut isteğe bağlı randevu e-postası ve kuyruğu korunur, yeni otomatik Push→e-posta fallback'i eklenmez; eski SMS/WhatsApp pending/leased işlerinin güvenli durdurulması, key rotation, gönderim kill switch'i ve güvenli rollback kanıtlanır. Kanalı geri açmak otomatik kurtarma değildir.
+- M23: mevcut 1–3 işletmeli tam iş günü pilotunda bildirim kurulumu, kaçırılan değişikliğin takip/arama işi, günlük kullanım ve destek yükü gözlenir. Pilot sadece bildirim demosuyla kapanmaz.
+
+İzin vermeyen kullanıcıya sayfadan ayrıldıktan sonra otomatik ulaşma, sessiz iPhone kurulumu, garantili alarm veya %100 teslim vaat edilmez. Kabul edilen açık sınırlar ile eksik uygulama/cihaz kanıtı ayrı raporlanır; ikinci grup `Bekliyor/Engelli` kalır.
 
 ## Kanıt kaydı
 
@@ -64,7 +77,7 @@ Bir kez geçilmiş değişmeyen alanı sebepsiz tekrar tekrar test etmek gerekme
 ## Plan v3 kanıt kapsamı
 
 - Her S görevinin dar kabulü kendi PR'ında tamamlanır. M24–M31, bu kontrolün nihai ürün değişimleriyle bozulmadığını doğrular; aynı davranışı her oturumda baştan test etme şartı değildir.
-- F16-01 seri ve F16-02 bildirim ayrı geliştirilebilir; G16/F17-04'te gelecek oluşumları taşıma/iptal ile eski hatırlatmaların durması birlikte test edilir.
+- F16-01 seri ve PUSH-03 hatırlatma ayrı dilimlerdir; F17-04'te gelecek oluşumları taşıma/iptal ile eski hatırlatmaların durması birlikte test edilir. F16-02'nin tarihsel OTP kabulü bu kanıtın yerine geçmez.
 - K02 para örneklerine sabit/aralık kesinleştirme, indirim yuvarlama/dağıtımı, paket kullanımı ve prim kaynak mutabakatı dahildir. İş politikası kararları ilgili kartlarda örneklerle tamamlanmadan mali kabul kapatılmaz.
 - M30 süre/kapasite rakamlarını ortam ve örnek sayısıyla raporlar; K03 hedefi ölçüm yapılmış gibi sunulmaz. Geçemeyen zorunlu hedef için düzeltme veya gerekçeli açık hedef revizyonu gerekir.
 - Plan v3'ün link/görev grafiği/bağımsız inceleme doğrulaması bu kullanıcı senaryolarını Geçti yapmaz.

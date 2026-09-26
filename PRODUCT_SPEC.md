@@ -4,6 +4,8 @@ Karar tarihi: 11 Eylül 2026. Kaynak: ürün sahibinin üç kol kararı ve payla
 
 Bu dosya hedef davranışı tanımlar. Uygulanan/kabul edilmiş özelliklerin canlı durumu için yalnız [TASKS.md](TASKS.md), sıra ve kabul ölçütleri için [ROADMAP.md](ROADMAP.md) esas alınır. Buradaki bir özelliğin listelenmesi, kodda hazır olduğu anlamına gelmez.
 
+**26 Eylül 2026 ilk yayın kararı:** `push_first` profili SMS ve WhatsApp kullanmaz; OTP ve otomatik fallback de buna dahildir. [Web Push ürün/kabul sözleşmesi](docs/plan/web-push-product-ready.md) yeni hedefin bağlayıcı devamıdır. Mevcut F16-02 WhatsApp proof kodu bu planla kaldırılmış sayılmaz: transportsuz rezervasyon/admission, doğrulanmamış iletişim ve müşteri yetkisi PUSH-01'de bağımsız kabul edilmeden geçiş yapılmaz. Tarihsel F16-02/G16 kabulü yeni profilin hazır olduğu anlamına gelmez.
+
 ## 1. Üç kol, ortak ürün
 
 | Kol | Kullanıcı ve amaç | Deneyim kuralı | Veri kaynağı |
@@ -36,12 +38,14 @@ Temel sıra: **salon ve hizmetler → tarih/saat/personel → özet ve iletişim
 | Hizmet seçimi | Kategoriler, fiyat veya fiyat aralığı, süre, birden fazla seçim, seçili hizmet sayısı | Kolay taranan liste/kartlar, görünür seçim özeti ve devam eylemi |
 | Tarih ve saat | Bugün/yarın/tarih gezinmesi, uygunluk, tercih edilen veya uygun personel | Renk yanında yazı/ikon; dolu saat seçilemez, saat dilimi açıktır |
 | Randevu özeti | Tüm hizmetler/personeller, tarih/saat, toplam veya tahmini bedel, iletişim, not, destekleniyorsa kampanya kodu | Eksikleri yerinde gösteren kısa form, erişilebilir bilgilendirme bağlantıları |
-| Sonuç ve yönetim | Başarı durumu, randevu özeti, güvenli yönetim bağlantısı, taşıma/iptal, bildirim durumu | Randevu sonucu ile e-posta/SMS sonucu ayrı görünür |
+| Sonuç ve yönetim | Başarı durumu, randevu özeti, güvenli yönetim bağlantısı, taşıma/iptal, bildirim durumu | Randevu sonucu, Push gönderim kabulü, bildirimin açılması ve değişiklik teyidi ayrı görünür; mevcut isteğe bağlı e-posta davranışı ve kayıtları korunur |
 
 - Temel rezervasyon ve yönetim için müşteri hesabı zorunlu değildir. Favori ilk sürümde cihazda tutulabilir; cihazlar arası hesap senkronu ayrı kapsamdır.
+- İlk yayın profilinde müşteri bildirim kurulumu/izni de zorunlu değildir. Doğrulanmamış telefon başka müşteri kaydı, geçmiş veya paket yetkisi üretmez. Ortak müşteri PWA'sı yalnız ayrı ayrı yetkilendirilmiş randevuları taşır; telefon/e-posta eşleşmesiyle salonlar arası kimlik birleştirme yapılmaz.
+- Push isteyen müşteri ana ekrana ekleme/izin ve test bildirimiyle yönlendirilir. İzin vermeyen müşteri yönetim bağlantısı ve isteğe bağlı takvim kaydıyla devam eder; Push hatırlatması alamayacağı görünürdür. Takvime ekleme kullanıcı eylemi ister ve sürekli senkronizasyon/garantili alarm değildir.
 - Çoklu hizmet seçimi tek bir müşteri işlemi olarak yürür; her hizmetin gerçek süresi, personeli ve doluluk kontrolü vardır. Bunun veri temeli Faz 11'dir.
 - Fiyat aralığı tahmini bedel olarak gösterilir; alt sınır kesin tahsilat gibi sunulmaz. Fiyat veri desteği F12-03’te, F11-01 grup snapshot migration’ından önce uygulanır; görsel müşteri işini beklemez. [K02](docs/plan/architecture-contracts.md#k02) ortak para/fiyat anlamını tanımlar.
-- Salon bilgisi ve fotoğraflar gerçek işletme verisidir. Yorum, promosyon veya SMS altyapısı tamamlanmadan çalışıyor görünen denetimler yayımlanmaz; eşdeğerlik matrisi bunları açık eksik olarak tutar.
+- Salon bilgisi ve fotoğraflar gerçek işletme verisidir. Yorum, promosyon veya ilgili bildirim altyapısı tamamlanmadan çalışıyor görünen denetimler yayımlanmaz; eşdeğerlik matrisi bunları açık eksik olarak tutar.
 - Randevu kaydolduktan sonra bağlantı/mesaj işlemi hata verirse müşteriye "randevu oluşmadı" denmez. Yenileme ve tekrar deneme aynı sonucu kurtarabilmelidir.
 
 ## 4. Randevu paneli sözleşmesi
@@ -93,6 +97,7 @@ Tam muhasebe, e-fatura, bordro, karmaşık stok ERP, çevrimiçi ödeme altyapı
 
 ## 7. Üç kol için ortak kabul
 
+- `push_first` yayınında [PUSH kabul dilimleri](docs/plan/web-push-product-ready.md#9-üretime-hazır-sayılma-kapısı), gerçek iPhone/Android ve no-SMS/WhatsApp kanıtı mevcut F17/M23 kapılarına eklenir. İşletme e-posta auth/recovery ve mevcut isteğe bağlı randevu e-postası korunur; e-posta zorunlu yapılmaz ve yeni otomatik Push→e-posta fallback'i eklenmez. Plan yazımı üretime hazır beyanı değildir.
 - Müşterinin oluşturduğu aynı kayıt panelde ve SalonApp'te görünür; birinde yapılan yetkili değişiklik diğerlerine yansır.
 - Erişim aktif işletme üyeliği ve sunucu/veritabanı yetkisiyle kontrol edilir; arayüzde buton saklamak yetkilendirme değildir.
 - Kullanıcı metinleri Türkçedir. `tenant`, `RPC`, `Faz`, `StaffService` gibi uygulama içi terimler müşteri/işletme ekranlarında kullanılmaz.
