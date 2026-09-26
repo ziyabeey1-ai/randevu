@@ -34,9 +34,9 @@ test('G16 hosted Storage proof covers owner read, cross-tenant and anon denial, 
   assert.match(script, /G16 hosted private-media Storage smoke passed/);
 });
 
-test('staging coordinator runs G16 only after the base smoke when requested', () => {
+test('staging coordinator invokes the G16 acceptance runner only after the base smoke', () => {
   assert.match(deploy, /g16: env\.RUN_G16_ACCEPTANCE === 'true'/);
   const smoke = deploy.indexOf("command('npm', ['run', 'staging:smoke'])");
-  const gate = deploy.indexOf("if (gates.g16) command('npm', ['run', 'staging:g16-acceptance'])");
+  const gate = deploy.indexOf("command('npm', ['run', 'staging:g16-acceptance'])");
   assert.ok(smoke >= 0 && gate > smoke);
 });
