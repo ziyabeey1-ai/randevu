@@ -151,6 +151,24 @@ Bu tablo yalnız H19 Kit geliştirme zincirinin canonical PR bağlarını tutar.
 | H19-KIT-TEST-GATE-V01 | Minimal test-spec gate v0.1 freeze | H19-KIT-ROADMAP | Çalışılıyor | Sol + koordinatör / 2026-09-24 | `h19-kit-test-spec-gate-freeze` · [PR #560](https://github.com/ziyabeey/randevu/pull/560) |
 | H19-KIT-M6 | Minimal test specification | H19-KIT-TEST-GATE-V01 | Çalışılıyor | Sol + koordinatör / 2026-09-24 | `h19-kit-m6-test-specification` · [PR #561](https://github.com/ziyabeey/randevu/pull/561) |
 
+## Web Push ilk yayın tracki
+
+26 Eylül 2026 kullanıcı kararı: ilk yayın `push_first`; SMS/WhatsApp, OTP ve otomatik fallback yok. Bu **yeni kapsamın** planı [Web Push sözleşmesidir](docs/plan/web-push-product-ready.md). Tarihsel 54 MVP kartı ve F16-02/G16 kabulü korunur; PUSH-01…06 kabul edilmeden bu yeni yayın profili hazır sayılamaz. Bu bölüm tek canlı sahiplik/durum kaydıdır; plan belgesi ikinci durum tablosu tutmaz.
+
+Bağımlılık hücreleri mevcut TEMEL/Sxx/Fxx-yy/Gxx sözlüğünü korur. Track içi sıra: PUSH-00 plan kabulü → PUSH-01/02 contract ve sıralı DB uygulaması → PUSH-03 → PUSH-04; PUSH-05 ortak link/authority sözleşmesinden sonra izole ilerleyebilir → PUSH-06 ortak release doğrulaması. Bu sıra [Context Pack](docs/plan/context-packs.md) içinde exact main ve dosya sahipliğiyle bağlanmadan uygulama başlamaz.
+
+| Kimlik | İş | Önkoşullar | Durum | Sahip / UTC güncelleme | Branch / kanıt / kabul sınırı |
+| --- | --- | --- | --- | --- | --- |
+| [PUSH-00](docs/plan/web-push-product-ready.md) | Web Push ilk yayın ürün/sözleşme ve kabul planı | TEMEL | İncelemede | ChatGPT koordinatör / 2026-09-26 | M / LIGHT · `docs/push-00-product-ready-plan` · [Context/devir](docs/handoffs/PUSH-00.md) · [claim](https://github.com/ziyabeey/randevu/issues/65#issuecomment-5849710654) · yalnız docs; #627/#637 merge veya açık devir sonrası current-main uzlaştırması gerekir |
+| [PUSH-01](docs/plan/web-push-product-ready.md#3-telefon-kimlik-ve-rezervasyon-yetkisi--push-01) | Transportsuz misafir rezervasyonu ve doğrulanmamış iletişim sınırı | S02, S04, S08, F12-05, F16-02 | Planlandı | — | L / STRICT; tekli/grup admission, CRM/telefon yetkisi, recovery ve RPC negatifleri; bağımsız R1; mevcut OTP guard uygulama kabulünden önce kaldırılmaz |
+| [PUSH-02](docs/plan/web-push-product-ready.md#4-origin-ve-müşteri-cihazı-bağlama--push-02) | Scoped abonelik, cihaz enrollment ve kalıcı inbox | S02, S03, S08, F09-03, F12-05 | Planlandı | — | L / STRICT; DOMAIN-01 ile origin/shared-writer sırası; tenant/capability/üyelik/cihaz iptali ve doğrudan RPC kabulü; R1 |
+| [PUSH-03](docs/plan/web-push-product-ready.md#5-kalıcı-olay-push-ve-hatırlatma--push-0203) | Web Push gönderimi ve sürümlü hatırlatma yaşam döngüsü | S03, F09-03, F16-01 | Planlandı | — | M / FOCUSED; durable dispatcher, TTL/retry/iptal/taşıma/seri, kabul-açılma-teyit ayrımı; sender authority değişirse STRICT/R1 |
+| [PUSH-04](docs/plan/web-push-product-ready.md#6-kurulum-izin-ve-kalıcı-liste--push-04) | Müşteri/KolayApp izin, kurulum, inbox ve Push-only service worker | F12-05, F14-05 | Planlandı | — | L / FOCUSED; backend sözleşmeleri önce kabul; eski manifest kimliği ve no-private-cache/no-offline-write korunur; R2 |
+| [PUSH-05](docs/plan/web-push-product-ready.md#7-takvime-ekleme--push-05) | Güvenli Google/ICS takvim ekleme ve güncellik metinleri | F11-03, F12-05 | Planlandı | — | M / FOCUSED; timezone/escaping/PII ve gerçek takvim importu; sürekli sync/garantili alarm iddiası yok |
+| [PUSH-06](docs/plan/web-push-product-ready.md#9-üretime-hazır-sayılma-kapısı) | Pilot öncesi ortak release, gerçek cihaz ve kanal cutover/rollback kanıtı | GS, G16, F17-01, F17-02 | Planlandı | — | L / FOCUSED; tüm PUSH uygulama dilimleriyle ortak aday; F17-03/04 için kanıt sağlar ve F17-04 öncesi kapanır; M23 kapanış şartı değildir; gerçek iPhone/Android ve 0 SMS/WhatsApp isteği; #644 preflight continuation'ı; M23 ayrı gerçek pilot |
+
+PUSH-00 adayı TASKS'ta yalnız bu bölümü yazar. #627'nin mevcut görev satırları/Storage/OTP sahipliği ve #637'nin ROADMAP/site planı korunur; merge sırası ve başlama sınırı claim/devirde kayıtlıdır. Plan adayı için yeşil docs CI, PUSH-01…06 uygulama veya cihaz kabulü değildir.
+
 ## Kabul kapıları
 
 | Kapı | Kapsam | Durum / kanıt |

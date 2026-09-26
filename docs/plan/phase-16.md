@@ -14,12 +14,14 @@ Bu işler MVP hedefinden çıkarılmamıştır. Her biri ayrı PR olabilir; gör
 - **Sorumluluk:** Veri/backend + randevu editörü. **Çakışma alanı:** Randevu serisi/grup işlemleri.
 - **İş ve çıktı:** Sıklık/adet, seri önizlemesi, çakışma listesi, tek oluşum ve gelecek oluşumlar için açık değişiklik kapsamı ekle. İlk sürümde sınırlı adetli seri atomik oluşturulur; bir oluşum çakışırsa tüm seri reddedilir. Adet üst sınırını performans ölçümüyle belgeleyip sunucuda uygula.
 - **Kabul:** DST/izin/kapanış içeren seri yanlış saate kaymaz; çakışmalar kullanıcıya hangi tarihte olduğunu gösterir. Tekrar istek ikinci seri üretmez. Tamamlanan geçmiş oluşum değişmez; geleceği taşıma/iptalde kapsam önizlemesi ve audit vardır.
-- **Devir:** Seri/oluşum kimlikleri, durum olayları, limit ve F16-02'nin kullanacağı güncel sürüm bilgisi.
-- **v3 olay kabulü:** Her seri oluşumu K01 grup kimliği ve S03/F16-02 olay-sürüm sözleşmesini kullanır. K03 başlangıç seri sınırı uygulanır. F16-02 henüz bitmediyse olay kontratı test edilir; G16’da gelecek seriyi taşıma/iptal ile eski hatırlatma baskılama birlikte doğrulanır.
+- **Devir:** Seri/oluşum kimlikleri, durum olayları, limit ve [PUSH-03](web-push-product-ready.md#5-kalıcı-olay-push-ve-hatırlatma--push-0203) gönderim/hatırlatmasının kullanacağı güncel sürüm bilgisi.
+- **v3 olay kabulü:** Her seri oluşumu K01 grup kimliği ve S03 olay-sürüm sözleşmesini kullanır. K03 başlangıç seri sınırı uygulanır. 26 Eylül kanal kararı sonrası hatırlatma devamı [PUSH-03](web-push-product-ready.md#5-kalıcı-olay-push-ve-hatırlatma--push-0203) kapsamındadır; ortak F17 kabulünde gelecek seriyi taşıma/iptal ile eski hatırlatma baskılama birlikte doğrulanır. Tarihsel F16-02 telefon OTP kabulü hatırlatma teslimi değildir.
 
 ## F16-02
 
 **WhatsApp OTP ile public telefon doğrulama · 16A**
+
+**Tarihsel uygulama / yeni yayın hedefi ayrımı (26 Eylül 2026):** Aşağıdaki kart mevcut OTP authority ve kabul geçmişini tanımlar; açık #627 provider/Storage yazımı kendi sahibinde kalır. Ürün sahibinin sonraki SMS/WhatsApp'sız ilk yayın kararı [PUSH-01](web-push-product-ready.md#3-telefon-kimlik-ve-rezervasyon-yetkisi--push-01) ile yeni transportsuz rezervasyon/contact sözleşmesini gerektirir. Bu yeni yol uygulanıp bağımsız kabul edilmeden mevcut proof kontrolü kaldırılmaz veya provider arızasında atlanmaz. Plan değişikliği eski hosted OTP kanıtını tamamlamaz; G16'nın tarihsel kapanışı yeni profilin hazır olduğunu göstermez. SMS/WhatsApp'sız release gate'i PUSH-06 ve F17/MVP matrisindedir.
 
 - **Bağımlılık:** F12-05, F17-01.
 - **Sorumluluk:** Public booking + provider doğrulama. **Çakışma alanı:** Public müşteri telefonu ve booking create proof'u.

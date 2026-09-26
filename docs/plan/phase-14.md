@@ -58,6 +58,8 @@ Mevcut başlangıç: ortak kabuk, booking/calendar/customer API'leri. Adisyon/ta
 
 **Üç kol, mali bütünlük ve PWA kabulü**
 
+**26 Eylül Push devamı:** Tarihsel F14-05 kurulabilir manifest/no-offline-finance kabulü korunur. [PUSH-04](web-push-product-ready.md#6-kurulum-izin-ve-kalıcı-liste--push-04), mevcut service-worker-yok testini bağımsız uygulama diliminde dar Push-only izin + davranışsal no-private-cache/no-offline-write kanıtına dönüştürür. Bu plan mevcut testi kaldırmaz, yeni SW/kurulum teslim edilmiş sayılmaz. KolayApp manifest kimliği ve `/app/` kapsamı korunur; müşteri origin/manifest'i ayrı yetkiyle kurulur.
+
 - **Bağımlılık:** F14-04, F12-05.
 - **Sorumluluk:** QA + frontend/backend. **Çakışma alanı:** Entegrasyon ve mobil uygulama yaşam döngüsü.
 - **İş ve çıktı:** Müşteri → panel → KolayApp → adisyon → tahsilat zincirini iki işletmeyle doğrula. Kurulabilir web uygulaması/manifest ve sürüm güncelleme davranışını tamamla; hassas API verisi veya mali yazımlar çevrimdışı kuyruğa/kalıcı önbelleğe alınmaz.

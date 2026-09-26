@@ -4,6 +4,8 @@
 
 F17-01 ve F17-02 hazırlığı en başta yürütülebilir; son faza ertelenmez. Bu görevler bugün erişim/ortam hazır olduğu iddiası değildir. Kod uygulaması veya ortam kurulumu bu planlama teslimatında başlatılmaz.
 
+**26 Eylül ilk yayın profili:** [Web Push sözleşmesi](web-push-product-ready.md) SMS/WhatsApp'sız release için ek bağlayıcı kabul kapsamıdır. Tarihsel F16-02/G16 ve 54 görev sayımı bu yeni kapsamı karşılamaz. PUSH-06 pilot öncesi kanıtı tamamlar; sıra PUSH-01…06 → F17-04 → F17-05/M23 → G17'dir. PUSH-06 kapanışı F17-04/05 veya M23'ü beklemez.
+
 **Faz direktifi / kaynak head `5e789ad`:** Kapanış yalnız “kartlar tamamlandı” sayımı değildir; taşınmış sınırlar isimleriyle kapanır. İlk gerçek kullanıcı teması F17-05'e bırakılmaz: irreversible F11-01 öncesi saha görüşmesi ve F13-02 sonrası yarım günlük işletme gözlemi pilot öncesi öğrenme kapılarıdır. Head'e bağlı mevcut-runner ayrıntıları kart açılırken current main'de yeniden doğrulanır.
 
 ## F17-01
@@ -47,6 +49,8 @@ F17-01 ve F17-02 hazırlığı en başta yürütülebilir; son faza ertelenmez. 
 ## F17-04
 
 **MVP kabul matrisi ve referans doğrulaması**
+
+`push_first` için PUSH-01…05 uygulama kabulü ve PUSH-06'nın gerçek cihaz/origin/cutover kanıtı aynı release adayında bulunmalıdır. [MVP matrisinin](../../MVP_ACCEPTANCE.md#web-push-ilk-yayın-profilinin-kabulü) M01…M31 kimlikleri korunur; #644 preflight continuation'ı yeni profil kanıtını fail-closed denetler. Eski OTP/delivery testini silmek veya yalnız docs CI'ını geçmek bu kabulü sağlamaz. Gerçek iPhone/Android, yetkisiz/izinsiz müşteri, stale olay/teyit ve 0 SMS/WhatsApp isteği kanıtı eksikken product-ready denmez.
 
 - **Bağımlılık:** GS, G09, G10, G11, G12, G13, G14, G15, G16, F17-03.
 - **Sorumluluk:** QA + Ziya. **Çakışma alanı:** Uçtan uca kanıtlar ve kabul matrisi.
