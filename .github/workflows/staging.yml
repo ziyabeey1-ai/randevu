@@ -29,6 +29,11 @@ on:
         required: false
         default: false
         type: boolean
+      run_g16_storage_acceptance:
+        description: Run only G16 private Storage gate while WhatsApp provider acceptance is externally blocked
+        required: false
+        default: false
+        type: boolean
       run_s01_acceptance:
         description: Run S01 public mailbox recovery boundary
         required: false
@@ -64,6 +69,7 @@ jobs:
       RUN_F10_ACCEPTANCE: ${{ inputs.run_f10_auth_acceptance }}
       RUN_F10_TEAM_ACCEPTANCE: ${{ inputs.run_f10_team_acceptance || inputs.run_f10_auth_acceptance }}
       RUN_G16_ACCEPTANCE: ${{ inputs.run_g16_acceptance }}
+      RUN_G16_STORAGE_ACCEPTANCE: ${{ inputs.run_g16_storage_acceptance }}
       RUN_S01_ACCEPTANCE: ${{ inputs.run_s01_acceptance }}
       RUN_S07_C4_ACCEPTANCE: ${{ inputs.run_s07_c4_acceptance }}
       S01_RECOVERY_EMAIL: ${{ inputs.s01_recovery_email }}

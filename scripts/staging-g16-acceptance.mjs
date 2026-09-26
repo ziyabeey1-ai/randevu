@@ -7,6 +7,8 @@ import {
   netgsmWhatsappConfigured,
 } from '../worker/whatsapp-verify.ts';
 
+const storageOnly = process.env.RUN_G16_STORAGE_ACCEPTANCE === 'true'
+  && process.env.RUN_G16_ACCEPTANCE !== 'true';
 const required = [
   'STAGING_APP_ORIGIN',
   'STAGING_DATABASE_URL',
@@ -16,9 +18,7 @@ const required = [
   'STAGING_OWNER_A_PASSWORD',
   'STAGING_OWNER_B_EMAIL',
   'STAGING_OWNER_B_PASSWORD',
-  'NETGSM_USERCODE',
-  'NETGSM_PASSWORD',
-  'NETGSM_ACCEPTANCE_PHONE',
+  ...(storageOnly ? [] : ['NETGSM_USERCODE', 'NETGSM_PASSWORD', 'NETGSM_ACCEPTANCE_PHONE']),
 ];
 for (const name of required) {
   if (!process.env[name]) throw new Error(`Missing required G16 staging environment variable: ${name}`);
@@ -351,6 +351,8 @@ async function verifyHostedPrivateStorage() {
   console.log('G16 hosted private-media Storage smoke passed: byte equality, tenant/anon denial, API delete, metadata absence and fixture cleanup.');
 }
 
-await verifyNetgsmOtpSend();
+if (!storageOnly) await verifyNetgsmOtpSend();
 await verifyHostedPrivateStorage();
-console.log('G16 hosted acceptance passed.');
+console.log(storageOnly
+  ? 'G16 hosted private Storage acceptance passed.'
+  : 'G16 hosted acceptance passed.');

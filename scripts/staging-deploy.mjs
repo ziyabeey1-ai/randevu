@@ -122,6 +122,7 @@ function verifyDatabase(state) {
 
 const beforeCloud = await cloudState();
 const db = database();
+const runG16StorageAcceptance = env.RUN_G16_STORAGE_ACCEPTANCE === 'true';
 const gates = {
   f09: env.RUN_F09_ACCEPTANCE === 'true',
   f10: env.RUN_F10_ACCEPTANCE === 'true',
@@ -185,7 +186,7 @@ if (db.pending) {
 }
 if ((state.rotating || mode === 'resume') && !gates.f09) throw new Error('Rotation/resume requires the real F09 acceptance gate');
 if (gates.f09 && !env.RESEND_ACCEPTANCE_API_KEY) throw new Error('Missing F09 provider acceptance read key');
-state.evidence = { ...state.evidence, gates };
+state.evidence = { ...state.evidence, gates, g16StorageAcceptance: runG16StorageAcceptance };
 for (const value of Object.values(state.keys)) console.log(`::add-mask::${value}`);
 
 await executeCutover({
@@ -238,7 +239,7 @@ await executeCutover({
     if (current.fixtures === 0 && !state.rotating && mode !== 'resume') command('npm', ['run', 'staging:seed']);
     else if (current.fixtures !== 2) throw new Error('Staging fixtures incomplete; never reset encrypted data during rotation');
     command('npm', ['run', 'staging:smoke']);
-    if (gates.g16) command('npm', ['run', 'staging:g16-acceptance']);
+    if (gates.g16 || runG16StorageAcceptance) command('npm', ['run', 'staging:g16-acceptance']);
     if (gates.f09) command('npm', ['run', 'staging:f09-acceptance']);
     if (gates.f10) command('npm', ['run', 'staging:f10-auth-acceptance']);
     if (gates.f10team) command('npm', ['run', 'staging:f10-team-acceptance']);
