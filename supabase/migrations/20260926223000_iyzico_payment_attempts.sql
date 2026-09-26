@@ -512,16 +512,16 @@ begin
     raise exception 'IYZICO_PAYMENT_ATTEMPT_NOT_COMMITTABLE';
   end if;
 
-  begin
-    update public.iyzico_payment_attempts
-    set provider_payment_id = p_provider_payment_id,
-        verified_at = now(),
-        updated_at = now()
-    where id = v_attempt.id
-    returning * into v_attempt;
-  exception when unique_violation then
+  if exists (
+    select 1
+    from public.iyzico_payment_attempts other
+    where other.environment = v_attempt.environment
+      and other.account_ref = v_attempt.account_ref
+      and other.provider_payment_id = p_provider_payment_id
+      and other.id <> v_attempt.id
+  ) then
     raise exception 'IYZICO_PROVIDER_PAYMENT_CONFLICT';
-  end;
+  end if;
 
   select * into v_ticket
   from public.tickets t
@@ -549,12 +549,18 @@ begin
   end if;
 
   if v_reason is not null then
-    update public.iyzico_payment_attempts
-    set status = 'charged_unapplied',
-        reconciliation_reason = v_reason,
-        updated_at = now()
-    where id = v_attempt.id
-    returning * into v_attempt;
+    begin
+      update public.iyzico_payment_attempts
+      set status = 'charged_unapplied',
+          provider_payment_id = p_provider_payment_id,
+          verified_at = now(),
+          reconciliation_reason = v_reason,
+          updated_at = now()
+      where id = v_attempt.id
+      returning * into v_attempt;
+    exception when unique_violation then
+      raise exception 'IYZICO_PROVIDER_PAYMENT_CONFLICT';
+    end;
 
     return jsonb_build_object(
       'kind','charged_unapplied',
@@ -564,24 +570,30 @@ begin
     );
   end if;
 
-  insert into public.ticket_payment_events(
-    business_id, ticket_id, event_type, source_payment_event_id,
-    payment_method, correction_direction, amount_minor, reason,
-    actor_membership_id
-  ) values (
-    v_attempt.business_id, v_attempt.ticket_id, 'payment', null,
-    'card', null, v_attempt.amount_minor, null,
-    v_attempt.created_by_membership_id
-  )
-  returning * into v_event;
+  begin
+    insert into public.ticket_payment_events(
+      business_id, ticket_id, event_type, source_payment_event_id,
+      payment_method, correction_direction, amount_minor, reason,
+      actor_membership_id
+    ) values (
+      v_attempt.business_id, v_attempt.ticket_id, 'payment', null,
+      'card', null, v_attempt.amount_minor, null,
+      v_attempt.created_by_membership_id
+    )
+    returning * into v_event;
 
-  update public.iyzico_payment_attempts
-  set status = 'charged_applied',
-      payment_event_id = v_event.id,
-      applied_at = now(),
-      updated_at = now()
-  where id = v_attempt.id
-  returning * into v_attempt;
+    update public.iyzico_payment_attempts
+    set status = 'charged_applied',
+        provider_payment_id = p_provider_payment_id,
+        payment_event_id = v_event.id,
+        verified_at = now(),
+        applied_at = now(),
+        updated_at = now()
+    where id = v_attempt.id
+    returning * into v_attempt;
+  exception when unique_violation then
+    raise exception 'IYZICO_PROVIDER_PAYMENT_CONFLICT';
+  end;
 
   return jsonb_build_object(
     'kind','applied',
