@@ -477,7 +477,7 @@ begin
   foreach v_operation in array array[
     'storage.object.sign', 'storage.object.sign_many', 'storage.object.copy', 'storage.object.move',
     'storage.object.list', 'storage.object.list_v2', 'storage.render.image_authenticated',
-    'storage.object.info_authenticated', 'object.get_authenticated_info', 'object.head_authenticated_info',
+    'storage.object.info_authenticated', 'object.head_authenticated_info',
     'storage.s3.object.get', 'storage.s3.object.copy', 'storage.s3.object.list', 'storage.object.get_signed', ''
   ] loop
     perform set_config('storage.operation', v_operation, true);
@@ -491,10 +491,18 @@ begin
       raise exception 'F16-03 Storage operation "%" passed the private read predicate', v_operation;
     end if;
   end loop;
-  perform set_config('storage.operation', 'storage.object.get_authenticated', true);
-  select count(*) into v_count from storage.objects where bucket_id = 'appointment-private-media'
-    and name like 'f1631000-0000-4000-8000-000000000001/%';
-  if v_count <> 9 then raise exception 'F16-03 direct download policy returned % objects after the matrix', v_count; end if;
+  foreach v_operation in array array['object.get_authenticated_info','storage.object.get_authenticated'] loop
+    perform set_config('storage.operation', v_operation, true);
+    select count(*) into v_count from storage.objects where bucket_id = 'appointment-private-media'
+      and name like 'f1631000-0000-4000-8000-000000000001/%';
+    if v_count <> 9 then
+      raise exception 'F16-03 direct download operation "%" returned % objects after the matrix', v_operation, v_count;
+    end if;
+    if not public.appointment_private_media_read_allowed(
+         'f1631000-0000-4000-8000-000000000001/' || current_setting('f1603.group_a') || '/f1636000-0000-4000-8000-000000000001.webp') then
+      raise exception 'F16-03 direct download operation "%" failed the private read predicate', v_operation;
+    end if;
+  end loop;
 end
 $$;
 -- Storage deletes with `DELETE ... RETURNING` as the caller, which also needs
@@ -517,7 +525,7 @@ declare
 begin
   select storage_path into v_path
   from public.begin_appointment_private_media_delete('f1631000-0000-4000-8000-000000000001', current_setting('f1603.delete_media')::uuid);
-  foreach v_operation in array array['storage.object.get_authenticated','storage.object.sign','storage.object.list','storage.object.delete_many',''] loop
+  foreach v_operation in array array['object.get_authenticated_info','storage.object.get_authenticated','storage.object.sign','storage.object.list','storage.object.delete_many',''] loop
     perform set_config('storage.operation', v_operation, true);
     select count(*) into v_count from storage.objects where bucket_id = 'appointment-private-media' and name = v_path;
     if v_count <> 0 then raise exception 'F16-03 deleting object visible to "%"', v_operation; end if;
