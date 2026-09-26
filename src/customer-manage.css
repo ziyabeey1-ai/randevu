@@ -132,6 +132,12 @@
   font-size: 0.9rem;
 }
 
+.customer-calendar-actions { margin-top: 18px; padding-top: 18px; border-top: 1px solid #e7e5e4; }
+.customer-calendar-actions h2, .customer-calendar-actions p { margin-top: 0; }
+.customer-calendar-actions > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.customer-calendar-actions .public-secondary { margin-top: 0; }
+.customer-calendar-actions small { display: block; margin-top: 10px; color: #57534e; }
+
 .manage-empty {
   width: min(680px, 100%);
   margin: 80px auto 0;

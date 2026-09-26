@@ -7,6 +7,7 @@ import ManageFeedback from './ManageFeedback';
 import LanguageSwitch from './LanguageSwitch';
 import { ManagePromo } from './PublicPromo';
 import { customerNotificationStatus, type CustomerNotificationStatus } from '../shared/customer-notification-status';
+import CustomerCalendarActions from './CustomerCalendarActions';
 
 type ManagedAppointment = {
   appointment_id: string;
@@ -374,6 +375,13 @@ export default function ManageAppointmentPage({ token }: { token: string }) {
             </dl>
           )}
           <div className="public-result-status is-neutral" aria-label={t('Bildirim durumu')}><PublicNotificationStatus notification={notification} /></div>
+          <CustomerCalendarActions event={group ? {
+            id: group.groupId, businessName: appointment.business_name, address: appointment.support_address, status: group.status,
+            startsAt: group.startsAt, endsAt: group.endsAt, timezone: group.timezone, sequence: group.version,
+          } : {
+            id: appointment.appointment_id, businessName: appointment.business_name, address: appointment.support_address, status: appointment.status,
+            startsAt: appointment.starts_at, endsAt: appointment.ends_at, timezone: appointment.timezone,
+          }} />
           <p className="manage-security-note">{t('Bu sayfanın bağlantısı randevunuzu değiştirme yetkisi verir. Bağlantıyı yalnız güvendiğiniz kişilerle paylaşın.')}</p>
         </section>
 
